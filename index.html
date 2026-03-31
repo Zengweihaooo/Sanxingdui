@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+
+<html lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>三星堆 · 遗址调查脉络</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            appDark: '#12161b',
+            appHeader: '#1c2229',
+            cardBg: 'rgba(28, 34, 41, 0.8)',
+            cardBorder: '#4a6b8c',
+            progressBg: '#2a343f',
+            progressFill: '#5ea2d9',
+            progressFillDim: '#6a7888',
+            progressFillRed: '#cc5555',
+            textMain: '#ffffff',
+            textMuted: '#8b9bb4',
+            lineColor: '#3d5266'
+          },
+          fontFamily: {
+            sans: ['PingFang SC', 'Microsoft YaHei', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+<style data-purpose="custom-shapes">
+    html {
+      background: #07090d;
+    }
+
+    body {
+      position: relative;
+      color: #fff;
+      overflow-x: auto;
+      overflow-y: auto;
+      min-height: 100vh;
+      background: #07090d;
+    }
+
+    .page-scroll {
+      min-width: min-content;
+    }
+
+    /* 全屏规律动效：双网格错相位移 + 暗角 + 微光漂移 */
+    .bg-stage {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      overflow: hidden;
+    }
+
+    .bg-grid {
+      position: absolute;
+      width: 220%;
+      height: 220%;
+      left: -60%;
+      top: -60%;
+      background-image:
+        linear-gradient(rgba(94, 162, 217, 0.16) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(94, 162, 217, 0.16) 1px, transparent 1px);
+      background-size: 52px 52px;
+      animation: grid-scroll 14s linear infinite;
+    }
+
+    .bg-grid--dual {
+      opacity: 0.55;
+      background-size: 26px 26px;
+      animation-duration: 9s;
+      animation-direction: reverse;
+      transform: rotate(4deg);
+    }
+
+    .bg-grid--pulse {
+      opacity: 0.35;
+      background-size: 104px 104px;
+      animation-duration: 28s;
+      animation-name: grid-scroll-alt;
+    }
+
+    @keyframes grid-scroll {
+      0% { transform: translate(0, 0); }
+      100% { transform: translate(52px, 52px); }
+    }
+
+    @keyframes grid-scroll-alt {
+      0% { transform: translate(0, 0) rotate(0deg); }
+      100% { transform: translate(-52px, 52px) rotate(0deg); }
+    }
+
+    .bg-glow {
+      position: absolute;
+      inset: -25%;
+      background:
+        radial-gradient(ellipse 50% 40% at 30% 40%, rgba(94, 162, 217, 0.28) 0%, transparent 55%),
+        radial-gradient(ellipse 45% 35% at 75% 60%, rgba(74, 107, 140, 0.22) 0%, transparent 50%),
+        radial-gradient(ellipse 60% 50% at 50% 100%, rgba(20, 30, 45, 0.5) 0%, transparent 55%);
+      animation: glow-orbit 18s ease-in-out infinite;
+    }
+
+    @keyframes glow-orbit {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      33% { transform: translate(6%, -4%) scale(1.08); }
+      66% { transform: translate(-5%, 7%) scale(0.94); }
+    }
+
+    .bg-shimmer {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(
+        125deg,
+        transparent 40%,
+        rgba(120, 180, 230, 0.07) 50%,
+        transparent 60%
+      );
+      background-size: 200% 200%;
+      animation: shimmer 8s ease-in-out infinite;
+    }
+
+    @keyframes shimmer {
+      0%, 100% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+    }
+
+    .bg-vignette {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse 75% 65% at 50% 45%, transparent 0%, rgba(7, 9, 13, 0.85) 100%);
+    }
+
+    /* Slanted Card Styles */
+    .timeline-node {
+      position: relative;
+      z-index: 1;
+      clip-path: polygon(10px 0%, 100% 0%, calc(100% - 10px) 100%, 0% 100%);
+      background: rgba(20, 26, 33, 0.7);
+      border: 1px solid rgba(74, 107, 140, 0.3);
+      box-shadow: inset 0 0 10px rgba(94, 162, 217, 0.1);
+      transition:
+        transform 0.4s cubic-bezier(0.34, 1.35, 0.64, 1),
+        box-shadow 0.35s ease,
+        border-color 0.35s ease,
+        background 0.35s ease;
+      transform-origin: center center;
+    }
+
+    .timeline-node:hover {
+      transform: scale(1.06);
+      z-index: 30;
+      box-shadow:
+        0 12px 40px rgba(0, 0, 0, 0.45),
+        0 0 24px rgba(94, 162, 217, 0.35),
+        inset 0 0 14px rgba(94, 162, 217, 0.15);
+      border-color: rgba(94, 162, 217, 0.55);
+    }
+
+    .timeline-node:active {
+      transform: scale(1.02);
+    }
+
+    .timeline-node::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      border: 1px solid rgba(94, 162, 217, 0.3);
+      clip-path: polygon(10px 0%, 100% 0%, calc(100% - 10px) 100%, 0% 100%);
+      pointer-events: none;
+    }
+
+    .timeline-node.active {
+      background: rgba(30, 45, 60, 0.9);
+      border-color: rgba(94, 162, 217, 0.8);
+      box-shadow: 0 0 15px rgba(94, 162, 217, 0.4), inset 0 0 15px rgba(94, 162, 217, 0.2);
+    }
+
+    .timeline-node.active:hover {
+      box-shadow:
+        0 12px 40px rgba(0, 0, 0, 0.45),
+        0 0 28px rgba(94, 162, 217, 0.5),
+        inset 0 0 16px rgba(94, 162, 217, 0.25);
+    }
+    .timeline-node.active::before {
+       border-color: rgba(144, 200, 255, 0.8);
+       box-shadow: 0 0 8px rgba(144, 200, 255, 0.6);
+    }
+
+    .node-image-container {
+      position: relative;
+      clip-path: polygon(8px 0%, 100% 0%, calc(100% - 8px) 100%, 0% 100%);
+      overflow: hidden;
+    }
+
+    .node-image-container::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      background: rgba(100, 100, 110, 0.2);
+      pointer-events: none;
+      transition: opacity 0.35s ease;
+    }
+
+    .timeline-node:hover .node-image-container::after,
+    .timeline-node.active .node-image-container::after {
+      opacity: 0;
+    }
+
+    /* Connection Lines */
+    .svg-lines {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .line-path {
+      fill: none;
+      stroke: #3d5266;
+      stroke-width: 2;
+    }
+
+    .line-path-bridge {
+      fill: none;
+      stroke: #3d5266;
+      stroke-width: 2;
+      stroke-opacity: 0.55;
+    }
+
+    /* Progress Bars */
+    .progress-track {
+      background: rgba(0,0,0,0.5);
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+
+    /* Footer icon boxes — hover scale */
+    footer .flex.items-center.gap-2 > :first-child {
+      transition: transform 0.35s cubic-bezier(0.34, 1.35, 0.64, 1);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    footer .flex.items-center.gap-2:hover > :first-child {
+      transform: scale(1.14);
+    }
+  </style>
+</head>
+<body class="min-h-screen text-sm select-none">
+<div class="bg-stage" aria-hidden="true">
+  <div class="bg-glow"></div>
+  <div class="bg-grid"></div>
+  <div class="bg-grid bg-grid--dual"></div>
+  <div class="bg-grid bg-grid--pulse"></div>
+  <div class="bg-shimmer"></div>
+  <div class="bg-vignette"></div>
+</div>
+<div class="page-scroll min-w-0">
+<!-- BEGIN: Header Section -->
+<header class="p-8 pb-4 relative z-10 max-w-[100vw]">
+<h1 class="text-4xl font-light mb-6 tracking-wide">三星堆遗址 · 调查与发掘脉络</h1>
+<div class="flex flex-col gap-3 text-xs tracking-wider text-textMuted font-semibold">
+<div class="flex items-center gap-3">
+<svg class="w-5 h-5 text-progressFill shrink-0" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+<span>公开数据占比<br/>（全局统计）</span>
+</div>
+<div class="flex items-center gap-3">
+<svg class="w-5 h-5 text-progressFill shrink-0" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+<span>关注热度 · 话题占比<br/>（访客侧）</span>
+</div>
+</div>
+</header>
+<!-- END: Header Section -->
+<!-- BEGIN: Main Timeline Area -->
+<main id="timeline-board" class="relative w-[2040px] max-w-none h-[720px] mx-4 mt-4 mb-24 z-10 min-h-[720px] shrink-0">
+<svg id="connection-svg" class="svg-lines" aria-hidden="true">
+<defs>
+  <marker id="arrowhead" viewBox="0 0 12 12" refX="12" refY="6" markerWidth="8" markerHeight="8" orient="auto" markerUnits="userSpaceOnUse">
+    <path d="M 0 0 L 12 6 L 0 12 Z" fill="#3d5266"></path>
+  </marker>
+  <marker id="arrowhead-dim" viewBox="0 0 12 12" refX="12" refY="6" markerWidth="8" markerHeight="8" orient="auto" markerUnits="userSpaceOnUse">
+    <path d="M 0 0 L 12 6 L 0 12 Z" fill="#3d5266" fill-opacity="0.55"></path>
+  </marker>
+</defs>
+</svg>
+<!-- Node 0: 起点 -->
+<div id="node-start" class="absolute left-10 top-[310px] w-52">
+<div class="timeline-node active p-1 flex flex-col">
+<div class="node-image-container h-24 bg-black relative">
+<img alt="祭祀坑" class="w-full h-full object-cover" src="图片/download%20(1).jpeg"/>
+</div>
+<div class="p-2 pb-3">
+<p class="text-[10px] uppercase text-textMuted tracking-wider leading-tight">选定探方起点<br/><span class="text-white">一号祭祀坑</span></p>
+</div>
+</div>
+</div>
+<!-- 上干 -->
+<div id="node-top-main" class="absolute left-[360px] top-[150px] w-52">
+<div class="timeline-node p-1 flex flex-col">
+<div class="node-image-container h-24 bg-black relative">
+<img alt="青铜面具" class="w-full h-full object-cover" src="图片/download.jpeg"/>
+</div>
+<div class="p-2">
+<p class="text-[10px] uppercase text-white tracking-wider leading-tight mb-2">广汉鸭子河沿岸<br/>勘探与发掘布设</p>
+<div class="flex items-center gap-2">
+<div class="flex-grow h-1 progress-track relative">
+<div class="absolute top-0 left-0 h-full bg-progressFill" style="width: 91%"></div>
+</div>
+<span class="text-[10px] text-textMuted">91%</span>
+</div>
+</div>
+</div>
+</div>
+<!-- 上干分叉 1–4 -->
+<div id="node-zongmu" class="absolute left-[740px] top-[10px] w-44">
+<div class="timeline-node p-1 flex flex-col">
+<div class="node-image-container h-14 bg-black relative">
+<img alt="纵目面具" class="w-full h-full object-cover" src="图片/gettyimages-1232194471-612x612.jpg"/>
+</div>
+<div class="p-2 py-1">
+<p class="text-[9px] uppercase text-white tracking-wider leading-tight mb-1">青铜纵目面具<br/>提取与记录</p>
+<div class="flex items-center gap-2">
+<div class="flex-grow h-1 progress-track relative">
+<div class="absolute top-0 left-0 h-full bg-progressFillDim" style="width: 63%"></div>
+</div>
+<span class="text-[9px] text-textMuted">63%</span>
+</div>
+</div>
+</div>
+</div>
+<div id="node-yuqi" class="absolute left-[740px] top-[150px] w-44">
+<div class="timeline-node p-1 flex flex-col">
+<div class="node-image-container h-14 bg-black relative">
+<img alt="玉器层" class="w-full h-full object-cover" src="图片/gettyimages-1308124891-612x612.jpg"/>
+</div>
+<div class="p-2 py-1">
+<p class="text-[9px] uppercase text-white tracking-wider leading-tight mb-1">玉器与象牙叠压层<br/>逐层清理</p>
+<div class="flex items-center gap-2">
+<div class="flex-grow h-1 progress-track relative">
+<div class="absolute top-0 left-0 h-full bg-progressFillDim" style="width: 32%"></div>
+</div>
+<span class="text-[9px] text-textMuted">32%</span>
+</div>
+</div>
+</div>
+</div>
+<div id="node-jinmian" class="absolute left-[740px] top-[250px] w-44">
+<div class="timeline-node p-1 flex flex-col">
+<div class="node-image-container h-14 bg-black relative">
+<img alt="黄金面罩" class="w-full h-full object-cover" src="图片/gettyimages-1308127375-612x612.jpg"/>
+</div>
+<div class="p-2 py-1">
+<p class="text-[9px] uppercase text-white tracking-wider leading-tight mb-1">金面罩与薄金饰<br/>显微取样</p>
+<div class="flex items-center gap-2">
+<div class="flex-grow h-1 progress-track relative">
+<div class="absolute top-0 left-0 h-full bg-progressFillDim" style="width: 18%"></div>
+</div>
+<span class="text-[9px] text-textMuted">18%</span>
+</div>
+</div>
+</div>
+</div>
+<div id="node-shenshu" class="absolute left-[860px] top-[60px] w-44">
+<div class="timeline-node p-1 flex flex-col">
+<div class="node-image-container h-14 bg-black relative">
+<img alt="青铜神树" class="w-full h-full object-cover" src="图片/gettyimages-1308128453-612x612.jpg"/>
+</div>
+<div class="p-2 py-1">
+<p class="text-[9px] uppercase text-white tracking-wider leading-tight mb-1">青铜神树构件<br/>拼对与复原</p>
+<div class="flex items-center gap-2">
+<div class="flex-grow h-1 progress-track relative">
+<div class="absolute top-0 left-0 h-full bg-progressFillDim" style="width: 41%"></div>
+</div>
+<span class="text-[9px] text-textMuted">41%</span>
+</div>
+</div>
+</div>
+</div>
+<!-- 中继：神坛 -->
+<div id="node-hub-top" class="absolute left-[1080px] top-[200px] w-52">
+<div class="timeline-node p-1 flex flex-col">
+<div class="node-image-container h-20 bg-black relative">
+<img alt="青铜神坛" class="w-full h-full object-cover" src="图片/gettyimages-1340673035-612x612.jpg"/>
+</div>
+<div class="p-2">
+<p class="text-[10px] uppercase text-white tracking-wider leading-tight mb-2">祭祀遗存链<br/>青铜神坛与立人</p>
+<div class="flex items-center gap-2 opacity-50">
+<div class="flex-grow h-[2px] bg-lineColor"></div>
+<div class="w-2 h-[2px] bg-lineColor"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- 远端分叉 -->
+<div id="node-quanzhang" class="absolute left-[1280px] top-[120px] w-48">
+<div class="timeline-node p-1 flex flex-col">
+<div class="node-image-container h-16 bg-black relative">
+<img alt="黄金权杖" class="w-full h-full object-cover" src="图片/gettyimages-1403170630-612x612.jpg"/>
+</div>
+<div class="p-2">
+<p class="text-[10px] uppercase text-white tracking-wider leading-tight mb-2">金杖纹饰<br/>与族徽线索</p>
+<div class="flex items-center gap-2">
+<div class="flex-grow h-1 progress-track relative">
+<div class="absolute top-0 left-0 h-full bg-progressFillDim" style="width: 70%"></div>
+</div>
+<span class="text-[10px] text-textMuted">70%</span>
+</div>
+</div>
+</div>
+</div>
+<div id="node-zhuijiao" class="absolute left-[1480px] top-[60px] w-48">
+<div class="timeline-node p-1 flex flex-col">
+<div class="node-image-container h-16 bg-black relative">
+<img alt="追缴文物" class="w-full h-full object-cover" src="图片/gettyimages-1413610906-612x612.jpg"/>
+</div>
+<div class="p-2">
+<p class="text-[10px] uppercase text-white tracking-wider leading-tight mb-2">追缴与回流<br/>青铜重器</p>
+<div class="flex items-center gap-2 opacity-50">
+<div class="flex-grow h-[2px] bg-lineColor"></div>
+<div class="w-2 h-[2px] bg-lineColor"></div>
+</div>
+</div>
+</div>
+</div>
+<div id="node-haiwai" class="absolute left-[1720px] top-[40px] w-44">
+<div class="timeline-node p-1 flex flex-col">
+<div class="node-image-container h-16 bg-black relative">
+<img alt="海外线索" class="w-full h-full object-cover" src="图片/gettyimages-1413610915-612x612.jpg"/>
+</div>
+<div class="p-2 py-1">
+<p class="text-[9px] uppercase text-white tracking-wider leading-tight mb-1">海外拍卖与<br/>走私链追踪</p>
+<div class="flex items-center gap-2">
+<div class="flex-grow h-1 progress-track relative">
+<div class="absolute top-0 left-0 h-full bg-progressFillDim" style="width: 22%"></div>
+</div>
+<span class="text-[9px] text-textMuted">22%</span>
+</div>
+</div>
+</div>
+</div>
+<div id="node-yuzhang" class="absolute left-[1720px] top-[260px] w-44">
+<div class="timeline-node p-1 flex flex-col">
+<div class="node-image-container h-16 bg-black relative">
+<img alt="玉璋" class="w-full h-full object-cover" src="图片/gettyimages-2163362809-612x612.jpg"/>
+</div>
+<div class="p-2 py-1">
+<p class="text-[9px] uppercase text-white tracking-wider leading-tight mb-1">玉璋与牙璋<br/>类型学比对</p>
+<div class="flex items-center gap-2">
+<div class="flex-grow h-1 progress-track relative">
+<div class="absolute top-0 left-0 h-full bg-progressFillDim" style="width: 55%"></div>
+</div>
+<span class="text-[9px] text-textMuted">55%</span>
+</div>
+</div>
+</div>
+</div>
+<!-- 下干 -->
+<div id="node-bottom-main" class="absolute left-[360px] top-[470px] w-52">
+<div class="timeline-node p-1 flex flex-col">
+<div class="node-image-container h-24 bg-black relative">
+<img alt="二号坑" class="w-full h-full object-cover" src="图片/gettyimages-2163362814-612x612.jpg"/>
+</div>
+<div class="p-2">
+<p class="text-[10px] uppercase text-white tracking-wider leading-tight mb-2">二号祭祀坑<br/>象牙与青铜器群</p>
+<div class="flex items-center gap-2">
+<div class="flex-grow h-1 progress-track relative">
+<div class="absolute top-0 left-0 h-full bg-progressFill" style="width: 88%"></div>
+</div>
+<span class="text-[10px] text-textMuted">88%</span>
+</div>
+</div>
+</div>
+</div>
+<!-- 下干分叉 -->
+<div id="node-liankao" class="absolute left-[740px] top-[350px] w-44">
+<div class="timeline-node p-1 flex flex-col">
+<div class="node-image-container h-14 bg-black relative">
+<img alt="联合考古" class="w-full h-full object-cover" src="图片/gettyimages-2229684360-612x612.jpg"/>
+</div>
+<div class="p-2 py-1">
+<p class="text-[9px] uppercase text-white tracking-wider leading-tight mb-1">现场防护成功<br/>盗扰未得逞</p>
+<div class="flex items-center gap-2">
+<div class="flex-grow h-1 progress-track relative">
+<div class="absolute top-0 left-0 h-full bg-progressFillDim" style="width: 60%"></div>
+</div>
+<span class="text-[9px] text-textMuted">60%</span>
+</div>
+</div>
+</div>
+</div>
+<div id="node-canpian" class="absolute left-[740px] top-[440px] w-44">
+<div class="timeline-node p-1 flex flex-col">
+<div class="node-image-container h-14 bg-black relative">
+<img alt="残片" class="w-full h-full object-cover" src="图片/gettyimages-2229684365-612x612.jpg"/>
+</div>
+<div class="p-2 py-1">
+<p class="text-[9px] uppercase text-white tracking-wider leading-tight mb-1">残片被带离现场<br/>需追缴</p>
+<div class="flex items-center gap-2">
+<div class="flex-grow h-1 progress-track relative">
+<div class="absolute top-0 left-0 h-full bg-progressFillDim" style="width: 30%"></div>
+</div>
+<span class="text-[9px] text-textMuted">30%</span>
+</div>
+</div>
+</div>
+</div>
+<div id="node-fanghu" class="absolute left-[740px] top-[530px] w-44">
+<div class="timeline-node p-1 flex flex-col">
+<div class="node-image-container h-14 bg-black relative">
+<img alt="防护缺口" class="w-full h-full object-cover" src="图片/gettyimages-2230271544-612x612.jpg"/>
+</div>
+<div class="p-2 py-1">
+<p class="text-[9px] uppercase text-white tracking-wider leading-tight mb-1">防护出现缺口<br/>遗存风险升高</p>
+<div class="flex items-center gap-2">
+<div class="flex-grow h-1 progress-track relative">
+<div class="absolute top-0 left-0 h-full bg-progressFillRed" style="width: 10%"></div>
+</div>
+<span class="text-[9px] text-textMuted">10%</span>
+</div>
+</div>
+</div>
+</div>
+<div id="node-tuyang" class="absolute left-[860px] top-[580px] w-44">
+<div class="timeline-node p-1 flex flex-col">
+<div class="node-image-container h-14 bg-black relative">
+<img alt="土样" class="w-full h-full object-cover" src="图片/gettyimages-2241618709-612x612.jpg"/>
+</div>
+<div class="p-2 py-1">
+<p class="text-[9px] uppercase text-white tracking-wider leading-tight mb-1">碳十四与<br/>土样测年支线</p>
+<div class="flex items-center gap-2">
+<div class="flex-grow h-1 progress-track relative">
+<div class="absolute top-0 left-0 h-full bg-progressFillDim" style="width: 37%"></div>
+</div>
+<span class="text-[9px] text-textMuted">37%</span>
+</div>
+</div>
+</div>
+</div>
+<!-- 中继下 -->
+<div id="node-fix" class="absolute left-[1080px] top-[390px] w-52">
+<div class="timeline-node p-1 flex flex-col">
+<div class="node-image-container h-20 bg-black relative">
+<img alt="修复" class="w-full h-full object-cover" src="图片/gettyimages-925866188-612x612.jpg"/>
+</div>
+<div class="p-2">
+<p class="text-[10px] uppercase text-white tracking-wider leading-tight mb-2">金器清洗与修复<br/>入藏著录</p>
+<div class="flex items-center gap-2 opacity-50">
+<div class="flex-grow h-[2px] bg-lineColor"></div>
+<div class="w-2 h-[2px] bg-lineColor"></div>
+</div>
+</div>
+</div>
+</div>
+<div id="node-museum" class="absolute left-[1480px] top-[400px] w-48">
+<div class="timeline-node p-1 flex flex-col">
+<div class="node-image-container h-16 bg-black relative">
+<img alt="博物馆" class="w-full h-full object-cover" src="图片/images.jpeg"/>
+</div>
+<div class="p-2">
+<p class="text-[10px] uppercase text-white tracking-wider leading-tight mb-2">三星堆博物馆<br/>常展与借展</p>
+<div class="flex items-center gap-2">
+<div class="flex-grow h-1 progress-track relative">
+<div class="absolute top-0 left-0 h-full bg-progressFillDim" style="width: 76%"></div>
+</div>
+<span class="text-[10px] text-textMuted">76%</span>
+</div>
+</div>
+</div>
+</div>
+<div id="node-heishi" class="absolute left-[1720px] top-[520px] w-44">
+<div class="timeline-node p-1 flex flex-col">
+<div class="node-image-container h-16 bg-black relative">
+<img alt="黑市" class="w-full h-full object-cover" src="图片/images.jpeg"/>
+</div>
+<div class="p-2 py-1">
+<p class="text-[9px] uppercase text-white tracking-wider leading-tight mb-1">文物流向灰色市场<br/>追踪困难</p>
+<div class="flex items-center gap-2">
+<div class="flex-grow h-1 progress-track relative">
+<div class="absolute top-0 left-0 h-full bg-progressFillRed" style="width: 8%"></div>
+</div>
+<span class="text-[9px] text-textMuted">8%</span>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- END: Main Timeline Area -->
+</div>
+<!-- BEGIN: Footer Controls -->
+<footer class="fixed bottom-0 w-full p-4 flex flex-wrap justify-center gap-6 bg-gradient-to-t from-black to-transparent z-20 text-xs text-textMuted tracking-wider font-semibold">
+<div class="flex items-center gap-2">
+<span class="w-5 h-5 border border-textMuted rounded flex items-center justify-center text-[10px] text-progressFill">△</span>
+<span>访客统计</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="w-5 h-5 border border-textMuted rounded flex items-center justify-center text-[10px]">☐</span>
+<span>显示图例</span>
+</div>
+<div class="flex items-center gap-2">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M8 9l4-4 4 4m0 6l-4 4-4-4" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+<span>滚动</span>
+</div>
+<div class="flex items-center gap-2">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+<span>缩放</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="w-5 h-5 border border-textMuted rounded-full flex items-center justify-center text-[10px]">✕</span>
+<span>未选中节点</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="w-5 h-5 border border-textMuted rounded-full flex items-center justify-center text-[10px] text-progressFillRed">◯</span>
+<span>返回</span>
+</div>
+</footer>
+<!-- END: Footer Controls -->
+<script>
+(function () {
+  var board = document.getElementById('timeline-board');
+  var svg = document.getElementById('connection-svg');
+  if (!board || !svg) return;
+
+  var edges = [
+    ['node-start', 'node-top-main'],
+    ['node-start', 'node-bottom-main'],
+    ['node-top-main', 'node-zongmu'],
+    ['node-top-main', 'node-yuqi'],
+    ['node-top-main', 'node-jinmian'],
+    ['node-top-main', 'node-shenshu'],
+    ['node-yuqi', 'node-hub-top'],
+    ['node-hub-top', 'node-quanzhang'],
+    ['node-quanzhang', 'node-zhuijiao'],
+    ['node-quanzhang', 'node-haiwai'],
+    ['node-quanzhang', 'node-yuzhang'],
+    ['node-bottom-main', 'node-liankao'],
+    ['node-bottom-main', 'node-canpian'],
+    ['node-bottom-main', 'node-fanghu'],
+    ['node-bottom-main', 'node-tuyang'],
+    ['node-liankao', 'node-fix'],
+    ['node-fix', 'node-museum'],
+    ['node-fix', 'node-heishi']
+  ];
+  var edgesDim = [['node-hub-top', 'node-fix']];
+
+  function anchor(el, boardRect) {
+    var r = el.getBoundingClientRect();
+    return {
+      rx: r.right - boardRect.left,
+      ry: (r.top - boardRect.top + r.bottom - boardRect.top) / 2,
+      lx: r.left - boardRect.left,
+      ly: (r.top - boardRect.top + r.bottom - boardRect.top) / 2
+    };
+  }
+
+  function curvePath(x1, y1, x2, y2) {
+    var dx = Math.max(40, (x2 - x1) * 0.45);
+    var c1x = x1 + dx;
+    var c2x = x2 - dx;
+    return 'M ' + x1 + ' ' + y1 + ' C ' + c1x + ' ' + y1 + ' ' + c2x + ' ' + y2 + ' ' + x2 + ' ' + y2;
+  }
+
+  function draw() {
+    var br = board.getBoundingClientRect();
+    var w = board.offsetWidth;
+    var h = board.offsetHeight;
+    svg.setAttribute('width', w);
+    svg.setAttribute('height', h);
+    svg.setAttribute('viewBox', '0 0 ' + w + ' ' + h);
+    for (var i = svg.children.length - 1; i >= 0; i--) {
+      if (svg.children[i].tagName === 'path') svg.removeChild(svg.children[i]);
+    }
+    var frag = document.createDocumentFragment();
+    edges.forEach(function (pair) {
+      var a = document.getElementById(pair[0]);
+      var b = document.getElementById(pair[1]);
+      if (!a || !b) return;
+      var A = anchor(a, br);
+      var B = anchor(b, br);
+      var path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      path.setAttribute('d', curvePath(A.rx, A.ry, B.lx, B.ly));
+      path.setAttribute('class', 'line-path');
+      path.setAttribute('marker-end', 'url(#arrowhead)');
+      frag.appendChild(path);
+    });
+    edgesDim.forEach(function (pair) {
+      var a = document.getElementById(pair[0]);
+      var b = document.getElementById(pair[1]);
+      if (!a || !b) return;
+      var A = anchor(a, br);
+      var B = anchor(b, br);
+      var path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      path.setAttribute('d', curvePath(A.rx, A.ry, B.lx, B.ly));
+      path.setAttribute('class', 'line-path-bridge');
+      path.setAttribute('marker-end', 'url(#arrowhead-dim)');
+      frag.appendChild(path);
+    });
+    svg.appendChild(frag);
+  }
+
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(function () { draw(); });
+  }
+  window.addEventListener('load', draw);
+  window.addEventListener('resize', function () { requestAnimationFrame(draw); });
+  if (window.ResizeObserver) {
+    new ResizeObserver(function () { requestAnimationFrame(draw); }).observe(board);
+  }
+  board.querySelectorAll('img').forEach(function (img) {
+    img.addEventListener('load', function () { requestAnimationFrame(draw); });
+  });
+})();
+</script>
+</body></html>
