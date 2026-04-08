@@ -37,14 +37,16 @@
     body {
       position: relative;
       color: #fff;
-      overflow-x: auto;
-      overflow-y: auto;
+      overflow: hidden;
       min-height: 100vh;
       background: #07090d;
     }
 
     .page-scroll {
       min-width: min-content;
+      transform-origin: 0 0;
+      will-change: transform;
+      padding-top: 92px; /* 留出固定标题高度，避免被遮挡 */
     }
 
     /* 全屏规律动效：双网格错相位移 + 暗角 + 微光漂移 */
@@ -139,6 +141,7 @@
       position: relative;
       z-index: 1;
       clip-path: polygon(10px 0%, 100% 0%, calc(100% - 10px) 100%, 0% 100%);
+      cursor: pointer;
       background: rgba(20, 26, 33, 0.7);
       border: 1px solid rgba(74, 107, 140, 0.3);
       box-shadow: inset 0 0 10px rgba(94, 162, 217, 0.1);
@@ -264,10 +267,9 @@
   <div class="bg-shimmer"></div>
   <div class="bg-vignette"></div>
 </div>
-<div class="page-scroll min-w-0">
 <!-- BEGIN: Header Section -->
-<header class="p-8 pb-4 relative z-10 max-w-[100vw]">
-<h1 class="text-4xl font-light mb-6 tracking-wide">三星堆遗址 · 调查与发掘脉络</h1>
+<header class="p-4 pb-3 fixed top-0 left-0 z-50 max-w-[520px] bg-[#07090d]/40 backdrop-blur-sm">
+<h1 class="text-3xl font-light mb-3 tracking-wide">三星堆遗址 · 调查与发掘脉络</h1>
 <div class="flex flex-col gap-3 text-xs tracking-wider text-textMuted font-semibold">
 <div class="flex items-center gap-3">
 <svg class="w-5 h-5 text-progressFill shrink-0" fill="none" stroke="currentColor" viewbox="0 0 24 24">
@@ -285,6 +287,7 @@
 </header>
 <!-- END: Header Section -->
 <!-- BEGIN: Main Timeline Area -->
+<div class="page-scroll min-w-0">
 <main id="timeline-board" class="relative w-[2040px] max-w-none h-[720px] mx-4 mt-4 mb-24 z-10 min-h-[720px] shrink-0">
 <svg id="connection-svg" class="svg-lines" aria-hidden="true">
 <defs>
@@ -627,11 +630,118 @@
 </div>
 </footer>
 <!-- END: Footer Controls -->
+<!-- BEGIN: Video Modal -->
+<div id="video-modal" class="fixed inset-0 z-[60] hidden flex items-center justify-center bg-black/70 p-4">
+  <div class="relative w-full max-w-4xl bg-[#07090d]/95 border border-white/15 rounded-lg overflow-hidden shadow-2xl">
+    <button
+      id="video-close"
+      type="button"
+      class="absolute top-2 right-2 w-9 h-9 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center text-xl leading-none z-10"
+      aria-label="关闭视频"
+    >×</button>
+    <video id="video-player" class="w-full max-h-[72vh] bg-black" controls playsinline preload="metadata"></video>
+  </div>
+</div>
+<!-- END: Video Modal -->
+<!-- BEGIN: Fullscreen Hint -->
+<div
+  id="fullscreen-hint"
+  class="fixed inset-0 z-[70] hidden items-center justify-center bg-black/70 p-4"
+>
+  <div class="w-full max-w-md bg-[#07090d]/95 border border-white/15 rounded-lg p-4 shadow-2xl">
+    <p class="text-sm text-textMuted leading-relaxed mb-3">
+      浏览器限制：需要用户操作才能进入全屏。
+    </p>
+    <button
+      id="fullscreen-cta"
+      type="button"
+      class="w-full rounded-md bg-[#07090d] border border-white/15 hover:bg-black/40 text-white py-2"
+    >
+      点击进入全屏
+    </button>
+  </div>
+</div>
+<!-- END: Fullscreen Hint -->
+<!-- BEGIN: Model viewer overlay（叠加于脉络页，不导航离开，全屏状态保持） -->
+<div
+  id="model-viewer-overlay"
+  class="fixed inset-0 z-[85] hidden"
+  aria-hidden="true"
+>
+  <iframe
+    id="model-viewer-frame"
+    class="absolute inset-0 w-full h-full border-0 bg-transparent"
+    title="三维模型预览"
+    allowfullscreen
+  ></iframe>
+</div>
+<!-- END: Model viewer overlay -->
 <script>
 (function () {
+  var overlay = document.getElementById('model-viewer-overlay');
+  var frame = document.getElementById('model-viewer-frame');
+
+  function closeModelViewerOverlay() {
+    if (!overlay || !frame) return;
+    overlay.classList.add('hidden');
+    overlay.setAttribute('aria-hidden', 'true');
+    frame.src = 'about:blank';
+  }
+
+  window.addEventListener('message', function (e) {
+    if (e.data && e.data.type === 'sanxingdui-close-model-viewer') {
+      closeModelViewerOverlay();
+    }
+  });
+
+  window.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && overlay && !overlay.classList.contains('hidden')) {
+      closeModelViewerOverlay();
+      e.preventDefault();
+    }
+  });
+
+  window.sanxingduiOpenModelViewer = function () {
+    if (!overlay || !frame) {
+      window.location.href = 'model-viewer.html';
+      return;
+    }
+    overlay.classList.remove('hidden');
+    overlay.setAttribute('aria-hidden', 'false');
+    frame.src = 'model-viewer.html';
+  };
+})();
+</script>
+<script>
+(function () {
+  var scene = document.querySelector('.page-scroll');
   var board = document.getElementById('timeline-board');
   var svg = document.getElementById('connection-svg');
-  if (!board || !svg) return;
+  if (!scene || !board || !svg) return;
+
+  var camera = {
+    scale: 1.14,
+    scaleTarget: 1.14,
+    scaleMin: 1.06,
+    scaleMax: 1.28,
+    scaleLerp: 0.12,
+    mouseX: window.innerWidth * 0.5,
+    mouseY: window.innerHeight * 0.5,
+    targetX: 0,
+    targetY: 0,
+    x: 0,
+    y: 0,
+    vx: 0,
+    vy: 0,
+    stiffness: 0.085,
+    damping: 0.8,
+    raf: 0,
+    lastMouseMoveAt: performance.now(),
+    maxX: 0,
+    maxY: 0,
+    idleBreathStartMs: 550,
+    idleBreathFadeMs: 900
+  };
 
   var edges = [
     ['node-start', 'node-top-main'],
@@ -655,15 +765,141 @@
   ];
   var edgesDim = [['node-hub-top', 'node-fix']];
 
-  function anchor(el, boardRect) {
-    var r = el.getBoundingClientRect();
+  function anchor(el) {
+    var x = el.offsetLeft;
+    var y = el.offsetTop;
+    var w = el.offsetWidth;
+    var h = el.offsetHeight;
     return {
-      rx: r.right - boardRect.left,
-      ry: (r.top - boardRect.top + r.bottom - boardRect.top) / 2,
-      lx: r.left - boardRect.left,
-      ly: (r.top - boardRect.top + r.bottom - boardRect.top) / 2
+      rx: x + w,
+      ry: y + h * 0.5,
+      lx: x,
+      ly: y + h * 0.5
     };
   }
+
+  function clamp(v, min, max) {
+    return Math.max(min, Math.min(max, v));
+  }
+
+  function smooth01(t) {
+    t = clamp(t, 0, 1);
+    return t * t * (3 - 2 * t); // smoothstep
+  }
+
+  function edgeEaseProgress(n) {
+    // 边缘慢入慢出：靠近 0/1 时速度更小，中心更灵活
+    var s = smooth01(n);
+    return Math.pow(s, 0.92);
+  }
+
+  function updateCameraTarget(scaleOverride) {
+    var s = typeof scaleOverride === 'number' ? scaleOverride : camera.scale;
+    var sceneW = scene.scrollWidth;
+    var sceneH = scene.scrollHeight;
+    var visibleW = window.innerWidth / s;
+    var visibleH = window.innerHeight / s;
+    var maxX = Math.max(0, sceneW - visibleW);
+    var maxY = Math.max(0, sceneH - visibleH);
+    camera.maxX = maxX;
+    camera.maxY = maxY;
+    var nx = clamp(camera.mouseX / window.innerWidth, 0, 1);
+    var ny = clamp(camera.mouseY / window.innerHeight, 0, 1);
+    camera.targetX = edgeEaseProgress(nx) * maxX;
+    camera.targetY = edgeEaseProgress(ny) * maxY;
+  }
+
+  function tickCamera() {
+    // 平滑变焦
+    camera.scale += (camera.scaleTarget - camera.scale) * camera.scaleLerp;
+    camera.scale = clamp(camera.scale, camera.scaleMin, camera.scaleMax);
+
+    // 先更新目标（受当前 scale 影响）
+    updateCameraTarget(camera.scale);
+
+    // 鼠标静止后：轻微呼吸漂移
+    var now = performance.now();
+    var idleFor = now - camera.lastMouseMoveAt;
+    var idleT = clamp((idleFor - camera.idleBreathStartMs) / camera.idleBreathFadeMs, 0, 1);
+    if (idleT > 0) {
+      var t = now / 1000;
+      var ampX = camera.maxX * 0.03;
+      var ampY = camera.maxY * 0.02;
+      var bx = Math.sin(t * 0.78) * ampX * idleT;
+      var by = Math.cos(t * 0.86) * ampY * idleT;
+      camera.targetX = clamp(camera.targetX + bx, 0, camera.maxX);
+      camera.targetY = clamp(camera.targetY + by, 0, camera.maxY);
+    }
+
+    camera.vx += (camera.targetX - camera.x) * camera.stiffness;
+    camera.vy += (camera.targetY - camera.y) * camera.stiffness;
+    camera.vx *= camera.damping;
+    camera.vy *= camera.damping;
+    camera.x += camera.vx;
+    camera.y += camera.vy;
+
+    var tx = -camera.x;
+    var ty = -camera.y;
+    scene.style.transform = 'translate3d(' + tx.toFixed(2) + 'px,' + ty.toFixed(2) + 'px,0) scale(' + camera.scale + ')';
+    camera.raf = requestAnimationFrame(tickCamera);
+  }
+
+  function resetCameraIfNeeded() {
+    camera.scaleTarget = camera.scale;
+    updateCameraTarget(camera.scale);
+    camera.x = clamp(camera.x, 0, Math.max(0, scene.scrollWidth - window.innerWidth / camera.scale));
+    camera.y = clamp(camera.y, 0, Math.max(0, scene.scrollHeight - window.innerHeight / camera.scale));
+  }
+
+  window.addEventListener('mousemove', function (e) {
+    camera.mouseX = e.clientX;
+    camera.mouseY = e.clientY;
+    camera.lastMouseMoveAt = performance.now();
+    updateCameraTarget();
+  });
+
+  window.addEventListener('resize', function () {
+    resetCameraIfNeeded();
+  });
+
+  window.addEventListener('wheel', function (e) {
+    // body overflow 被关掉后仍然需要接管滚轮
+    e.preventDefault();
+
+    var zoomFactor = Math.exp(-e.deltaY * 0.0016);
+    var nextScale = camera.scaleTarget * zoomFactor;
+    nextScale = clamp(nextScale, camera.scaleMin, camera.scaleMax);
+
+    if (Math.abs(nextScale - camera.scaleTarget) < 0.0001) return;
+
+    // 让缩放时尽量保持“鼠标下方点”不漂移
+    var pxRatio = e.clientX / window.innerWidth;
+    var pyRatio = e.clientY / window.innerHeight;
+
+    var visibleWNow = window.innerWidth / camera.scale;
+    var visibleHNow = window.innerHeight / camera.scale;
+    var anchorSceneX = camera.x + pxRatio * visibleWNow;
+    var anchorSceneY = camera.y + pyRatio * visibleHNow;
+
+    camera.scaleTarget = nextScale;
+
+    var visibleWNew = window.innerWidth / camera.scaleTarget;
+    var visibleHNew = window.innerHeight / camera.scaleTarget;
+    var maxXNew = Math.max(0, scene.scrollWidth - visibleWNew);
+    var maxYNew = Math.max(0, scene.scrollHeight - visibleHNew);
+
+    camera.x = anchorSceneX - pxRatio * visibleWNew;
+    camera.y = anchorSceneY - pyRatio * visibleHNew;
+    camera.x = clamp(camera.x, 0, maxXNew);
+    camera.y = clamp(camera.y, 0, maxYNew);
+    camera.vx = 0;
+    camera.vy = 0;
+
+    camera.mouseX = e.clientX;
+    camera.mouseY = e.clientY;
+    camera.lastMouseMoveAt = performance.now();
+    updateCameraTarget(camera.scaleTarget);
+  }, { passive: false });
 
   function curvePath(x1, y1, x2, y2) {
     var dx = Math.max(40, (x2 - x1) * 0.45);
@@ -673,7 +909,6 @@
   }
 
   function draw() {
-    var br = board.getBoundingClientRect();
     var w = board.offsetWidth;
     var h = board.offsetHeight;
     svg.setAttribute('width', w);
@@ -687,8 +922,8 @@
       var a = document.getElementById(pair[0]);
       var b = document.getElementById(pair[1]);
       if (!a || !b) return;
-      var A = anchor(a, br);
-      var B = anchor(b, br);
+      var A = anchor(a);
+      var B = anchor(b);
       var path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
       path.setAttribute('d', curvePath(A.rx, A.ry, B.lx, B.ly));
       path.setAttribute('class', 'line-path');
@@ -699,8 +934,8 @@
       var a = document.getElementById(pair[0]);
       var b = document.getElementById(pair[1]);
       if (!a || !b) return;
-      var A = anchor(a, br);
-      var B = anchor(b, br);
+      var A = anchor(a);
+      var B = anchor(b);
       var path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
       path.setAttribute('d', curvePath(A.rx, A.ry, B.lx, B.ly));
       path.setAttribute('class', 'line-path-bridge');
@@ -713,14 +948,176 @@
   if (document.fonts && document.fonts.ready) {
     document.fonts.ready.then(function () { draw(); });
   }
-  window.addEventListener('load', draw);
+  window.addEventListener('load', function () {
+    draw();
+    resetCameraIfNeeded();
+    if (!camera.raf) camera.raf = requestAnimationFrame(tickCamera);
+  });
   window.addEventListener('resize', function () { requestAnimationFrame(draw); });
   if (window.ResizeObserver) {
-    new ResizeObserver(function () { requestAnimationFrame(draw); }).observe(board);
+    new ResizeObserver(function () {
+      requestAnimationFrame(draw);
+      resetCameraIfNeeded();
+    }).observe(board);
   }
   board.querySelectorAll('img').forEach(function (img) {
-    img.addEventListener('load', function () { requestAnimationFrame(draw); });
+    img.addEventListener('load', function () {
+      requestAnimationFrame(draw);
+      resetCameraIfNeeded();
+    });
   });
+
+  updateCameraTarget();
+  if (!camera.raf) camera.raf = requestAnimationFrame(tickCamera);
+})();
+</script>
+<script>
+(function () {
+  var modal = document.getElementById('video-modal');
+  var player = document.getElementById('video-player');
+  var closeBtn = document.getElementById('video-close');
+  if (!modal || !player || !closeBtn) return;
+
+  var cards = Array.prototype.slice.call(
+    document.querySelectorAll('#timeline-board .timeline-node'),
+    0,
+    6
+  );
+  if (!cards.length) return;
+
+  function showModal() {
+    modal.classList.remove('hidden');
+  }
+
+  function hideModal() {
+    modal.classList.add('hidden');
+    try {
+      player.pause();
+      player.currentTime = 0;
+      player.removeAttribute('src');
+      player.load();
+    } catch (e) {
+      // ignore
+    }
+  }
+
+  closeBtn.addEventListener('click', function (e) {
+    e.stopPropagation();
+    hideModal();
+  });
+
+  modal.addEventListener('click', function (e) {
+    if (e.target === modal) hideModal();
+  });
+
+  window.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && !modal.classList.contains('hidden')) hideModal();
+  });
+
+  function playVideoForIndex(index0) {
+    if (index0 < 0 || index0 > 5) return;
+    var n = index0 + 1;
+    var primary = './视频/video' + n + '.mp4';
+    var fallback = './视频/video1.mp4';
+
+    var usedFallback = false;
+    showModal();
+
+    player.pause();
+    player.currentTime = 0;
+    player.onerror = null;
+
+    player.src = primary;
+    player.load();
+
+    player.onerror = function () {
+      if (usedFallback) return;
+      usedFallback = true;
+      player.onerror = null;
+      player.src = fallback;
+      player.load();
+      player.play().catch(function () {});
+    };
+
+    player.play().catch(function () {});
+  }
+
+  cards.forEach(function (node, idx) {
+    node.addEventListener('click', function (e) {
+      e.stopPropagation();
+      playVideoForIndex(idx);
+    });
+  });
+
+  var seventh = document.querySelectorAll('#timeline-board .timeline-node')[6];
+  if (seventh) {
+    seventh.addEventListener('click', function (e) {
+      e.stopPropagation();
+      if (typeof window.sanxingduiOpenModelViewer === 'function') {
+        window.sanxingduiOpenModelViewer();
+      } else {
+        window.location.href = 'model-viewer.html';
+      }
+    });
+  }
+})();
+</script>
+<script>
+(function () {
+  var hint = document.getElementById('fullscreen-hint');
+  var cta = document.getElementById('fullscreen-cta');
+
+  function getRequestFullscreenFn() {
+    var el = document.documentElement;
+    return (
+      el.requestFullscreen ||
+      el.webkitRequestFullscreen ||
+      el.mozRequestFullScreen ||
+      el.msRequestFullscreen
+    );
+  }
+
+  function tryFullscreen() {
+    if (document.fullscreenElement) return Promise.resolve(true);
+    var req = getRequestFullscreenFn();
+    if (!req) return Promise.resolve(false);
+
+    try {
+      var result = req.call(document.documentElement);
+      if (result && typeof result.then === 'function') {
+        return result.then(function () { return true; }).catch(function () { return false; });
+      }
+      return Promise.resolve(true);
+    } catch (e) {
+      return Promise.resolve(false);
+    }
+  }
+
+  function showHint() {
+    if (!hint) return;
+    hint.classList.remove('hidden');
+  }
+
+  function hideHint() {
+    if (!hint) return;
+    hint.classList.add('hidden');
+  }
+
+  window.addEventListener('load', function () {
+    // 最佳努力：允许时尝试自动进入全屏（部分浏览器可能拦截，需要用户手势）
+    tryFullscreen().then(function (ok) {
+      if (!ok) showHint();
+      else hideHint();
+    });
+  });
+
+  if (cta) {
+    cta.addEventListener('click', function () {
+      tryFullscreen().then(function (ok) {
+        if (ok) hideHint();
+      });
+    });
+  }
 })();
 </script>
 </body></html>

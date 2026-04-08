@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>模型预览 · 三星堆</title>
+  <style>
+    * { margin: 0; box-sizing: border-box; }
+    html, body {
+      height: 100%;
+      overflow: hidden;
+      background: #07090d;
+      color: #fff;
+      font-family: 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
+    }
+    /* 嵌入 index 的 iframe 内：页面与 WebGL 清屏透明，透出下层脉络页 */
+    html.model-viewer-embed,
+    html.model-viewer-embed body {
+      background: transparent !important;
+    }
+    html.model-viewer-embed #loading {
+      background: rgba(7, 9, 13, 0.4);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+    }
+    #viewport {
+      position: fixed;
+      inset: 0;
+      display: block;
+      touch-action: none;
+      cursor: grab;
+    }
+    #viewport:active { cursor: grabbing; }
+    #ui {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 10;
+      padding: 12px 16px;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      background: linear-gradient(to bottom, rgba(7, 9, 13, 0.92), transparent);
+      pointer-events: none;
+    }
+    #ui a, #ui button { pointer-events: auto; }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 14px;
+      border-radius: 8px;
+      border: 1px solid rgba(94, 162, 217, 0.45);
+      background: rgba(28, 34, 41, 0.88);
+      color: #fff;
+      text-decoration: none;
+      font-size: 13px;
+      cursor: pointer;
+    }
+    .btn:hover {
+      border-color: #5ea2d9;
+      background: rgba(40, 50, 62, 0.95);
+    }
+    button.btn {
+      font: inherit;
+      cursor: pointer;
+    }
+    #hint {
+      display: none;
+    }
+    .kbd-hint {
+      display: inline-block;
+      padding: 1px 6px;
+      margin: 0 1px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-family: ui-monospace, monospace;
+      border: 1px solid rgba(94, 162, 217, 0.45);
+      background: rgba(0, 0, 0, 0.25);
+      color: #5ea2d9;
+    }
+    #loading {
+      position: fixed;
+      inset: 0;
+      z-index: 5;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #07090d;
+      font-size: 14px;
+      color: #8b9bb4;
+    }
+    #loading.hidden { display: none; }
+    #error {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 11;
+      max-width: 90vw;
+      padding: 10px 16px;
+      background: rgba(140, 50, 50, 0.92);
+      border-radius: 8px;
+      font-size: 13px;
+      display: none;
+    }
+    #error.show { display: block; }
+
+    /* 悬浮文物说明：跟随光标（位置由 JS 写入 left/top），整体显隐 */
+    #mask-info {
+      position: fixed;
+      left: 0;
+      top: 0;
+      z-index: 25;
+      width: min(400px, calc(100vw - 24px));
+      pointer-events: none;
+      opacity: 0;
+      transform: scale(0.94);
+      transform-origin: 0 0;
+      filter: blur(5px);
+      transition:
+        opacity 0.42s cubic-bezier(0.22, 1, 0.36, 1),
+        transform 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+        filter 0.38s ease;
+      will-change: left, top, transform, opacity;
+    }
+    #mask-info.is-visible {
+      opacity: 1;
+      transform: scale(1);
+      filter: blur(0);
+    }
+    .mask-info-content {
+      transition:
+        opacity 0.38s cubic-bezier(0.22, 1, 0.36, 1),
+        transform 0.38s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .mask-info-content.mask-info-content--exit {
+      opacity: 0;
+      transform: translate3d(0, 10px, 0);
+    }
+    @keyframes mask-info-content-enter {
+      from {
+        opacity: 0;
+        transform: translate3d(0, -8px, 0);
+      }
+      to {
+        opacity: 1;
+        transform: translate3d(0, 0, 0);
+      }
+    }
+    .mask-info-content.mask-info-content--enter {
+      animation: mask-info-content-enter 0.48s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+    #mask-info .mask-info__frame {
+      position: relative;
+      border-radius: 14px;
+      padding: 1px;
+      background: linear-gradient(
+        135deg,
+        rgba(94, 162, 217, 0.55),
+        rgba(74, 107, 140, 0.25) 40%,
+        rgba(94, 162, 217, 0.15) 100%
+      );
+      box-shadow:
+        0 0 0 1px rgba(255, 255, 255, 0.06) inset,
+        0 24px 48px rgba(0, 0, 0, 0.45),
+        0 0 80px rgba(94, 162, 217, 0.12);
+    }
+    #mask-info .mask-info__inner {
+      border-radius: 13px;
+      padding: 18px 20px 20px;
+      background: rgba(18, 22, 28, 0.82);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+    }
+    #mask-info .mask-info__eyebrow {
+      font-size: 10px;
+      letter-spacing: 0.28em;
+      text-transform: uppercase;
+      color: #5ea2d9;
+      margin-bottom: 10px;
+      opacity: 0.9;
+    }
+    #mask-info .mask-info__title {
+      font-size: 17px;
+      font-weight: 500;
+      letter-spacing: 0.06em;
+      margin-bottom: 12px;
+      line-height: 1.35;
+      color: #fff;
+    }
+    #mask-info .mask-info__body {
+      font-size: 13px;
+      line-height: 1.75;
+      color: #b4c0d4;
+    }
+    #mask-info .mask-info__body p + p {
+      margin-top: 10px;
+    }
+    #mask-info .mask-info__accent {
+      display: block;
+      width: 36px;
+      height: 2px;
+      margin-top: 16px;
+      border-radius: 1px;
+      background: linear-gradient(90deg, #5ea2d9, transparent);
+      transform: scaleX(0);
+      transform-origin: left center;
+      transition: transform 0.55s cubic-bezier(0.22, 1, 0.36, 1) 0.08s;
+    }
+    #mask-info.is-visible .mask-info__accent {
+      transform: scaleX(1);
+    }
+  </style>
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/",
+      "fflate": "https://cdn.jsdelivr.net/npm/fflate@0.8.2/esm/browser.js"
+    }
+  }
+  </script>
+</head>
+<body>
+  <script>
+    if (window.self !== window.top) {
+      document.documentElement.classList.add('model-viewer-embed');
+    }
+  </script>
+  <div id="loading" aria-live="polite">正在加载 FBX 模型…</div>
+  <div id="error" role="alert"></div>
+  <div id="ui">
+    <button type="button" class="btn" id="model-viewer-back">← 返回脉络图</button>
+    <p id="hint">
+      左键拖拽：旋转视角 · 右键拖拽：平移 · 滚轮：缩放<br/>
+      <span style="opacity:0.85">光标移到模型上：总述 · 按 <kbd class="kbd-hint">1</kbd> 耳部 · 按 <kbd class="kbd-hint">2</kbd> 眼部</span><br/>
+      <span style="opacity:0.75;font-size:11px">模型默认绕竖轴缓转，拖拽时暂停</span>
+    </p>
+  </div>
+  <canvas id="viewport"></canvas>
+  <aside id="mask-info" aria-hidden="true">
+    <div class="mask-info__frame">
+      <div class="mask-info__inner">
+        <div id="mask-info-content" class="mask-info-content">
+          <p class="mask-info__eyebrow" id="mask-info-eyebrow">文物档案</p>
+          <h2 class="mask-info__title" id="mask-info-title">三星堆 · 青铜面具</h2>
+          <div class="mask-info__body" id="mask-info-body"></div>
+          <span class="mask-info__accent" aria-hidden="true"></span>
+        </div>
+      </div>
+    </div>
+  </aside>
+  <script type="module">
+    import * as THREE from 'three';
+    import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+    /** 第 7 张卡片入口：固定加载 05 号模型（非按文件夹序号对齐） */
+    const MODEL_URL = new URL('./模型/05-梵犀设计/05.fbx', import.meta.url).href;
+    /** FBX 内常带 Blender/Sketchfab 的绝对路径，浏览器无法请求；把贴图重定向到本地 texture 目录 */
+    const TEXTURE_DIR = new URL('./模型/05-梵犀设计/texture/', import.meta.url).href;
+
+    function remapTextureUrl(url) {
+      var u = String(url).replace(/\\/g, '/');
+      if (/^(blob:|data:)/i.test(u)) return u;
+      var lower = u.toLowerCase();
+      var idx = lower.indexOf('.jpg');
+      var extLen = 4;
+      if (idx === -1) {
+        idx = lower.indexOf('.jpeg');
+        extLen = 5;
+      }
+      if (idx === -1) {
+        idx = lower.indexOf('.png');
+        extLen = 4;
+      }
+      if (idx === -1) return u;
+      var slash = u.lastIndexOf('/', idx);
+      var raw = u.substring(slash + 1, idx + extLen);
+      if (!/^[\w.-]+\.(jpe?g|png)$/i.test(raw)) return u;
+      var file = raw.replace(/\.jpeg$/i, '.jpg');
+      return TEXTURE_DIR + file;
+    }
+
+    var manager = new THREE.LoadingManager();
+    manager.setURLModifier(function (url) {
+      var next = remapTextureUrl(url);
+      return next !== url ? next : url;
+    });
+
+    const canvas = document.getElementById('viewport');
+    const loadingEl = document.getElementById('loading');
+    const errorEl = document.getElementById('error');
+    const embedded = window.self !== window.top;
+
+    var backBtn = document.getElementById('model-viewer-back');
+    if (backBtn) {
+      backBtn.addEventListener('click', function () {
+        if (embedded) {
+          try {
+            window.parent.postMessage({ type: 'sanxingdui-close-model-viewer' }, '*');
+          } catch (e) {}
+        } else {
+          window.location.href = 'index.html';
+        }
+      });
+    }
+
+    function showError(msg) {
+      errorEl.textContent = msg;
+      errorEl.classList.add('show');
+      loadingEl.classList.add('hidden');
+    }
+
+    const scene = new THREE.Scene();
+    if (embedded) {
+      scene.background = null;
+    } else {
+      scene.background = new THREE.Color(0x07090d);
+    }
+
+    const camera = new THREE.PerspectiveCamera(
+      50,
+      window.innerWidth / window.innerHeight,
+      0.1,
+      50000
+    );
+
+    const renderer = new THREE.WebGLRenderer({
+      canvas,
+      antialias: true,
+      alpha: embedded
+    });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    if (embedded) {
+      renderer.setClearColor(0x000000, 0);
+    }
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+    const controls = new OrbitControls(camera, canvas);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.08;
+    controls.screenSpacePanning = true;
+    /* maxDistance 过小会在 controls.update() 里把相机拉近，导致调大 dist 无效；加载模型后再按包围体放宽 */
+    controls.minDistance = 0.01;
+    controls.maxDistance = 1e9;
+
+    scene.add(new THREE.AmbientLight(0xffffff, 0.52));
+    const key = new THREE.DirectionalLight(0xffffff, 1.05);
+    key.position.set(200, 400, 250);
+    key.castShadow = true;
+    key.shadow.mapSize.setScalar(2048);
+    scene.add(key);
+    const rim = new THREE.DirectionalLight(0x8eb8d8, 0.42);
+    rim.position.set(-300, 120, -200);
+    scene.add(rim);
+
+    var modelRoot = null;
+    var maskInfoEl = document.getElementById('mask-info');
+    var maskEyebrowEl = document.getElementById('mask-info-eyebrow');
+    var maskTitleEl = document.getElementById('mask-info-title');
+    var maskBodyEl = document.getElementById('mask-info-body');
+    var raycaster = new THREE.Raycaster();
+    var mouseNdc = new THREE.Vector2(-99, -99);
+    var pointerDown = false;
+    var wasOverModel = false;
+    var overModel = false;
+    var infoMode = 'full';
+    var clock = new THREE.Clock();
+    var modelSpinRadPerSec = 0.35;
+    var lastClientX = 0;
+    var lastClientY = 0;
+    var panelPosX = 0;
+    var panelPosY = 0;
+    var panelFollowLerp = 0.24;
+    var cursorPanelOffsetX = 20;
+    var cursorPanelOffsetY = 18;
+    var maskContentWrap = document.getElementById('mask-info-content');
+    var lastAppliedMode = null;
+    var contentSwitchTimer = null;
+    var contentEnterTimer = null;
+
+    function clampPanelToViewport(x, y, el) {
+      var w = el.offsetWidth || 360;
+      var h = el.offsetHeight || 220;
+      var pad = 10;
+      x = Math.max(pad, Math.min(x, window.innerWidth - w - pad));
+      y = Math.max(pad, Math.min(y, window.innerHeight - h - pad));
+      return { x: x, y: y };
+    }
+
+    var INFO_COPY = {
+      full: {
+        eyebrow: '文物档案',
+        title: '三星堆 · 青铜面具',
+        html:
+          '<p>此类面具出土于四川广汉三星堆遗址祭祀坑，属商代晚期青铜重器，面部夸张、双目纵突，兼具人形与神性，一般被认为是古蜀祭祀中与神灵沟通的法器或崇拜偶像。</p>' +
+          '<p>合金铸造与套铸工艺精湛，表面可见绿锈与局部贴金痕迹；与中原同期青铜器在造型系统上差异显著，是研究古蜀文明宗教与权力表达的重要实物。</p>'
+      },
+      ear: {
+        eyebrow: '局部细读 · 耳部',
+        title: '夸张耳形与冠饰衔接',
+        html:
+          '<p>耳部体量硕大、外展明显，与面部形成强烈轮廓对比，既强化「非人」视觉张力，也承担与额际、冠饰构件衔接的结构作用，常见于祭祀语境中对听觉与通神能力的象征化表达。</p>' +
+          '<p>铸造上多为分铸或套铸后再与面部结合，转折处可见打磨与补铸痕迹；锈蚀与贴金残存往往沿耳廓走向分布，可作观察浇铸顺序与后期修饰的线索。</p>'
+      },
+      eye: {
+        eyebrow: '局部细读 · 眼部',
+        title: '纵目与眼眶的仪式语言',
+        html:
+          '<p>眼部是最具辨识度的特征之一：柱状前伸的「纵目」与宽深的眼眶共同构成强烈的凝视感，在宗教图像逻辑中多被解读为超越常人的视域与神性注视。</p>' +
+          '<p>眼周与眉弓过渡处常形成锐利棱线，配合镶嵌或彩绘残迹（若存），可还原当年礼仪展示中的光影效果；数字化模型便于从多角度观察凸起尺度与对称关系。</p>'
+      }
+    };
+
+    function applyInfoMode(mode, animated) {
+      var data = INFO_COPY[mode] || INFO_COPY.full;
+      function writeDom() {
+        if (maskEyebrowEl) maskEyebrowEl.textContent = data.eyebrow;
+        if (maskTitleEl) maskTitleEl.textContent = data.title;
+        if (maskBodyEl) maskBodyEl.innerHTML = data.html;
+        lastAppliedMode = mode;
+      }
+
+      if (!maskContentWrap) {
+        writeDom();
+        return;
+      }
+
+      if (!animated || lastAppliedMode === null || mode === lastAppliedMode) {
+        if (contentSwitchTimer) {
+          clearTimeout(contentSwitchTimer);
+          contentSwitchTimer = null;
+        }
+        if (contentEnterTimer) {
+          clearTimeout(contentEnterTimer);
+          contentEnterTimer = null;
+        }
+        maskContentWrap.classList.remove('mask-info-content--exit', 'mask-info-content--enter');
+        writeDom();
+        return;
+      }
+
+      if (contentSwitchTimer) clearTimeout(contentSwitchTimer);
+      if (contentEnterTimer) clearTimeout(contentEnterTimer);
+
+      maskContentWrap.classList.remove('mask-info-content--enter');
+      maskContentWrap.classList.add('mask-info-content--exit');
+
+      contentSwitchTimer = setTimeout(function () {
+        contentSwitchTimer = null;
+        writeDom();
+        maskContentWrap.classList.remove('mask-info-content--exit');
+        void maskContentWrap.offsetWidth;
+        maskContentWrap.classList.add('mask-info-content--enter');
+        contentEnterTimer = setTimeout(function () {
+          contentEnterTimer = null;
+          maskContentWrap.classList.remove('mask-info-content--enter');
+        }, 500);
+      }, 200);
+    }
+
+    applyInfoMode('full', false);
+
+    window.addEventListener('keydown', function (e) {
+      var tag = e.target && e.target.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+      if (e.repeat) return;
+      var k = e.code;
+      if (k === 'Digit1' || k === 'Numpad1') {
+        e.preventDefault();
+        infoMode = 'ear';
+        if (overModel) applyInfoMode('ear', true);
+      } else if (k === 'Digit2' || k === 'Numpad2') {
+        e.preventDefault();
+        infoMode = 'eye';
+        if (overModel) applyInfoMode('eye', true);
+      }
+    });
+
+    canvas.addEventListener('pointerdown', function () {
+      pointerDown = true;
+    });
+    canvas.addEventListener('pointerup', function () {
+      pointerDown = false;
+    });
+    canvas.addEventListener('pointerleave', function () {
+      pointerDown = false;
+      mouseNdc.set(-99, -99);
+    });
+    canvas.addEventListener('pointermove', function (e) {
+      lastClientX = e.clientX;
+      lastClientY = e.clientY;
+      var rect = canvas.getBoundingClientRect();
+      mouseNdc.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+      mouseNdc.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+    });
+
+    const loader = new FBXLoader(manager);
+    loader.load(
+      MODEL_URL,
+      function (object) {
+        object.traverse(function (child) {
+          if (child.isMesh) {
+            child.castShadow = true;
+            child.receiveShadow = true;
+            if (child.material) {
+              var mats = Array.isArray(child.material) ? child.material : [child.material];
+              mats.forEach(function (m) {
+                function lin(t) {
+                  if (t) {
+                    t.colorSpace = THREE.NoColorSpace;
+                    t.needsUpdate = true;
+                  }
+                }
+                function srgb(t) {
+                  if (t) {
+                    t.colorSpace = THREE.SRGBColorSpace;
+                    t.needsUpdate = true;
+                  }
+                }
+                srgb(m.map);
+                srgb(m.emissiveMap);
+                lin(m.normalMap);
+                lin(m.bumpMap);
+                lin(m.roughnessMap);
+                lin(m.metalnessMap);
+                lin(m.aoMap);
+                lin(m.alphaMap);
+                lin(m.specularMap);
+                lin(m.displacementMap);
+                if (m.clearcoatNormalMap) lin(m.clearcoatNormalMap);
+                m.needsUpdate = true;
+              });
+            }
+          }
+        });
+        scene.add(object);
+        modelRoot = object;
+
+        object.updateMatrixWorld(true);
+        var box = new THREE.Box3().setFromObject(object);
+        var size = box.getSize(new THREE.Vector3());
+        var center = box.getCenter(new THREE.Vector3());
+        controls.target.copy(center);
+
+        /* 用 FOV + 包围球算距离，framePadding 越大模型在画面里越小（可调） */
+        var maxDim = Math.max(size.x, size.y, size.z, 1e-6);
+        var radius = maxDim * 0.5;
+        var vRad = THREE.MathUtils.degToRad(camera.fov);
+        var aspect = Math.max(camera.aspect, 1e-6);
+        var hRad = 2 * Math.atan(Math.tan(vRad / 2) * aspect);
+        var distV = radius / Math.tan(vRad / 2);
+        var distH = radius / Math.tan(hRad / 2);
+        var dist = Math.max(distV, distH, 1e-6);
+        var framePadding = 1.72;
+        dist *= framePadding;
+
+        var viewDir = new THREE.Vector3(0.55, 0.35, 1).normalize();
+        camera.position.copy(center).add(viewDir.multiplyScalar(dist));
+
+        camera.near = Math.max(0.001, dist / 50000);
+        camera.far = Math.max(5000, dist * 50 + radius * 10);
+        camera.updateProjectionMatrix();
+
+        controls.minDistance = Math.max(0.01, radius * 0.05);
+        controls.maxDistance = Math.max(dist * 8, radius * 50);
+        controls.update();
+
+        loadingEl.classList.add('hidden');
+      },
+      undefined,
+      function (err) {
+        console.error(err);
+        showError(
+          '模型加载失败。请用本地 HTTP 服务打开站点（勿直接用 file://），并确认 模型/05-梵犀设计/05.fbx 与 texture 目录存在。'
+        );
+      }
+    );
+
+    function onResize() {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+    window.addEventListener('resize', onResize);
+
+    function tick() {
+      requestAnimationFrame(tick);
+      var dt = clock.getDelta();
+
+      if (modelRoot && !pointerDown) {
+        modelRoot.rotation.y += modelSpinRadPerSec * dt;
+      }
+
+      controls.update();
+
+      if (modelRoot && maskInfoEl) {
+        raycaster.setFromCamera(mouseNdc, camera);
+        var hits = raycaster.intersectObject(modelRoot, true);
+        var over = hits.length > 0 && !pointerDown;
+
+        if (over) {
+          maskInfoEl.classList.add('is-visible');
+        } else {
+          maskInfoEl.classList.remove('is-visible');
+          if (wasOverModel && maskContentWrap) {
+            if (contentSwitchTimer) {
+              clearTimeout(contentSwitchTimer);
+              contentSwitchTimer = null;
+            }
+            if (contentEnterTimer) {
+              clearTimeout(contentEnterTimer);
+              contentEnterTimer = null;
+            }
+            maskContentWrap.classList.remove('mask-info-content--exit', 'mask-info-content--enter');
+            lastAppliedMode = null;
+          }
+        }
+
+        if (over && !wasOverModel) {
+          infoMode = 'full';
+          applyInfoMode('full', false);
+          var snap = clampPanelToViewport(
+            lastClientX + cursorPanelOffsetX,
+            lastClientY + cursorPanelOffsetY,
+            maskInfoEl
+          );
+          panelPosX = snap.x;
+          panelPosY = snap.y;
+          maskInfoEl.style.left = Math.round(panelPosX) + 'px';
+          maskInfoEl.style.top = Math.round(panelPosY) + 'px';
+        } else if (over) {
+          var target = clampPanelToViewport(
+            lastClientX + cursorPanelOffsetX,
+            lastClientY + cursorPanelOffsetY,
+            maskInfoEl
+          );
+          panelPosX += (target.x - panelPosX) * panelFollowLerp;
+          panelPosY += (target.y - panelPosY) * panelFollowLerp;
+          maskInfoEl.style.left = Math.round(panelPosX) + 'px';
+          maskInfoEl.style.top = Math.round(panelPosY) + 'px';
+        }
+
+        wasOverModel = over;
+        overModel = over;
+
+        maskInfoEl.setAttribute('aria-hidden', over ? 'false' : 'true');
+        canvas.style.cursor = pointerDown ? 'grabbing' : over ? 'pointer' : 'grab';
+      }
+
+      renderer.render(scene, camera);
+    }
+    tick();
+  </script>
+</body>
+</html>
