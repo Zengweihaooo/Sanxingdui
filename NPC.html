@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NPC 对话台 · 三星堆</title>
+  <style>
+    :root {
+      --bg: #07090d;
+      --panel: rgba(18, 22, 28, 0.82);
+      --panel-strong: rgba(24, 31, 40, 0.92);
+      --line: rgba(94, 162, 217, 0.28);
+      --line-strong: rgba(94, 162, 217, 0.6);
+      --text: #e7edf7;
+      --muted: #8b9bb4;
+      --accent: #5ea2d9;
+      --user-bubble: rgba(47, 76, 110, 0.55);
+      --npc-bubble: rgba(25, 33, 43, 0.9);
+    }
+
+    * { box-sizing: border-box; margin: 0; }
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: var(--bg);
+      color: var(--text);
+      font-family: "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+    }
+
+    .app {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      background:
+        radial-gradient(ellipse 42% 32% at 20% 12%, rgba(94, 162, 217, 0.12), transparent 70%),
+        radial-gradient(ellipse 45% 38% at 90% 90%, rgba(94, 162, 217, 0.08), transparent 72%),
+        var(--bg);
+    }
+
+    .chat-pane {
+      position: absolute;
+      left: 18px;
+      top: 18px;
+      bottom: 18px;
+      width: min(560px, calc(100vw - 36px));
+      z-index: 5;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: linear-gradient(to bottom, rgba(7, 9, 13, 0.92), rgba(7, 9, 13, 0.72));
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      min-width: 0;
+      box-shadow: 0 20px 52px rgba(0, 0, 0, 0.46);
+      overflow: hidden;
+    }
+
+    .chat-header {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      background: rgba(10, 14, 20, 0.76);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+
+    .title-wrap h1 {
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      color: #eaf3ff;
+    }
+    .title-wrap p {
+      margin-top: 3px;
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .ghost-btn {
+      border: 1px solid var(--line);
+      background: rgba(16, 22, 30, 0.85);
+      color: var(--muted);
+      border-radius: 8px;
+      padding: 6px 10px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .ghost-btn:hover { border-color: var(--line-strong); color: #d7e9ff; }
+
+    .messages {
+      overflow: auto;
+      padding: 14px 14px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      scroll-behavior: smooth;
+    }
+
+    .msg {
+      max-width: 88%;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 9px 11px;
+      line-height: 1.6;
+      font-size: 13px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22);
+      white-space: pre-wrap;
+    }
+    .msg.npc { align-self: flex-start; background: var(--npc-bubble); }
+    .msg.user { align-self: flex-end; background: var(--user-bubble); border-color: rgba(128, 188, 240, 0.4); }
+    .msg.meta {
+      align-self: center;
+      max-width: 100%;
+      border-style: dashed;
+      font-size: 12px;
+      color: var(--muted);
+      background: rgba(20, 26, 34, 0.5);
+    }
+
+    .input-pane {
+      border-top: 1px solid var(--line);
+      padding: 12px;
+      background: rgba(10, 14, 20, 0.82);
+      display: grid;
+      gap: 8px;
+    }
+
+    .input-row {
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      gap: 8px;
+      align-items: end;
+    }
+
+    textarea {
+      resize: none;
+      min-height: 44px;
+      max-height: 132px;
+      width: 100%;
+      border-radius: 10px;
+      border: 1px solid var(--line);
+      background: var(--panel);
+      color: var(--text);
+      padding: 10px 11px;
+      line-height: 1.5;
+      outline: none;
+      font-size: 13px;
+    }
+    textarea:focus { border-color: var(--line-strong); box-shadow: 0 0 0 2px rgba(94, 162, 217, 0.18); }
+
+    .icon-btn, .send-btn {
+      border-radius: 10px;
+      border: 1px solid var(--line);
+      background: var(--panel-strong);
+      color: #d9ebff;
+      cursor: pointer;
+      height: 44px;
+      min-width: 44px;
+      padding: 0 12px;
+      font-size: 13px;
+    }
+    .icon-btn:hover, .send-btn:hover { border-color: var(--line-strong); }
+    .icon-btn.recording {
+      border-color: rgba(236, 91, 91, 0.8);
+      box-shadow: 0 0 0 2px rgba(236, 91, 91, 0.2);
+      color: #ffdcdc;
+    }
+
+    .helper {
+      font-size: 11px;
+      color: var(--muted);
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .viewer-pane {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background:
+        radial-gradient(ellipse 58% 52% at 58% 45%, rgba(94, 162, 217, 0.12), transparent 68%),
+        #07090d;
+    }
+    #npc-canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+      touch-action: none;
+      cursor: grab;
+    }
+    #npc-canvas:active { cursor: grabbing; }
+
+    .viewer-tag {
+      position: absolute;
+      right: 14px;
+      top: 12px;
+      z-index: 3;
+      border: 1px solid var(--line);
+      background: rgba(12, 17, 24, 0.8);
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 11px;
+      color: #cfe3f8;
+      letter-spacing: 0.05em;
+    }
+  </style>
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+<body>
+  <main class="app">
+    <section class="chat-pane">
+      <header class="chat-header">
+        <div class="title-wrap">
+          <h1>三星堆 NPC 对话台</h1>
+          <p>支持历史记录 · 文字输入 · 语音输入</p>
+        </div>
+        <button id="clear-history" class="ghost-btn" type="button">清空记录</button>
+      </header>
+
+      <div id="messages" class="messages"></div>
+
+      <div class="input-pane">
+        <div class="input-row">
+          <textarea id="text-input" placeholder="输入你的问题（Enter 发送，Shift+Enter 换行）"></textarea>
+          <button id="voice-btn" class="icon-btn" type="button" title="语音输入">🎙️</button>
+          <button id="send-btn" class="send-btn" type="button">发送</button>
+        </div>
+        <div class="helper">
+          <span id="voice-status">语音状态：待机</span>
+          <span>
+            当前回复：默认占位（待接 API） ·
+            <button id="tts-toggle" type="button" class="ghost-btn" style="padding:2px 8px;font-size:11px;">语音回复：开</button>
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <section class="viewer-pane">
+      <canvas id="npc-canvas"></canvas>
+      <div class="viewer-tag">模型 2（FBX + 纹理）</div>
+    </section>
+  </main>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+    const STORAGE_KEY = 'sanxingdui_npc_chat_history_v1';
+    const MODEL_URL = new URL('./模型/02-梵犀设计/02.FBX', import.meta.url).href;
+    const TEXTURE_DIR = new URL('./模型/02-梵犀设计/texture/', import.meta.url).href;
+
+    // ===== Chat =====
+    const messagesEl = document.getElementById('messages');
+    const textInputEl = document.getElementById('text-input');
+    const sendBtnEl = document.getElementById('send-btn');
+    const voiceBtnEl = document.getElementById('voice-btn');
+    const voiceStatusEl = document.getElementById('voice-status');
+    const clearHistoryEl = document.getElementById('clear-history');
+    const ttsToggleEl = document.getElementById('tts-toggle');
+
+    let history = [];
+    let ttsEnabled = true;
+    let ttsVoice = null;
+
+    function saveHistory() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(history));
+    }
+
+    function loadHistory() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        history = raw ? JSON.parse(raw) : [];
+      } catch (e) {
+        history = [];
+      }
+      if (!history.length) {
+        const hello = {
+          role: 'npc',
+          text: '你好，我是三星堆展厅 NPC。你可以问我文物背景、工艺或时代脉络。'
+        };
+        history.push(hello);
+        saveHistory();
+      }
+    }
+
+    function renderHistory() {
+      messagesEl.innerHTML = '';
+      history.forEach(function (item) {
+        const div = document.createElement('div');
+        div.className = 'msg ' + (item.role === 'user' ? 'user' : (item.role === 'meta' ? 'meta' : 'npc'));
+        div.textContent = item.text;
+        messagesEl.appendChild(div);
+      });
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
+
+    function appendMessage(role, text) {
+      history.push({ role, text });
+      saveHistory();
+      renderHistory();
+      if (role === 'npc') speakText(text);
+    }
+
+    function pickTtsVoice() {
+      if (!('speechSynthesis' in window)) return null;
+      const voices = window.speechSynthesis.getVoices() || [];
+      if (!voices.length) return null;
+      const zh = voices.find(function (v) { return /zh|cmn|chinese/i.test(v.lang || '') || /zh|chinese|普通话/i.test(v.name || ''); });
+      return zh || voices[0];
+    }
+
+    function speakText(text) {
+      if (!ttsEnabled || !('speechSynthesis' in window)) return;
+      if (!text) return;
+      try {
+        window.speechSynthesis.cancel();
+        const utter = new SpeechSynthesisUtterance(text);
+        if (!ttsVoice) ttsVoice = pickTtsVoice();
+        if (ttsVoice) utter.voice = ttsVoice;
+        utter.lang = (ttsVoice && ttsVoice.lang) || 'zh-CN';
+        utter.rate = 1.0;
+        utter.pitch = 1.0;
+        window.speechSynthesis.speak(utter);
+      } catch (e) {
+        // ignore
+      }
+    }
+
+    function getDefaultReply(userText) {
+      return '【默认回复】已收到你的问题：' + userText +
+        '\n目前页面已接好 UI 与本地历史记录；下一步你给我 API 接口和 Key 后，我会把这里替换为真实对话返回。';
+    }
+
+    function sendCurrentText() {
+      const text = textInputEl.value.trim();
+      if (!text) return;
+      appendMessage('user', text);
+      textInputEl.value = '';
+      appendMessage('npc', getDefaultReply(text));
+      triggerNpcGesture();
+    }
+
+    sendBtnEl.addEventListener('click', sendCurrentText);
+    textInputEl.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendCurrentText();
+      }
+    });
+    clearHistoryEl.addEventListener('click', function () {
+      history = [];
+      localStorage.removeItem(STORAGE_KEY);
+      loadHistory();
+      renderHistory();
+    });
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.onvoiceschanged = function () {
+        ttsVoice = pickTtsVoice();
+      };
+      ttsVoice = pickTtsVoice();
+    }
+    if (ttsToggleEl) {
+      ttsToggleEl.addEventListener('click', function () {
+        ttsEnabled = !ttsEnabled;
+        ttsToggleEl.textContent = '语音回复：' + (ttsEnabled ? '开' : '关');
+        if (!ttsEnabled && 'speechSynthesis' in window) {
+          window.speechSynthesis.cancel();
+        }
+      });
+    }
+
+    // ===== Voice Input (Web Speech API) =====
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    let recognizer = null;
+    let isRecording = false;
+
+    if (SpeechRecognition) {
+      recognizer = new SpeechRecognition();
+      recognizer.lang = 'zh-CN';
+      recognizer.continuous = false;
+      recognizer.interimResults = true;
+
+      recognizer.onstart = function () {
+        isRecording = true;
+        voiceBtnEl.classList.add('recording');
+        voiceStatusEl.textContent = '语音状态：录音中...';
+      };
+
+      recognizer.onresult = function (event) {
+        let finalText = '';
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          finalText += event.results[i][0].transcript || '';
+        }
+        textInputEl.value = finalText.trim();
+      };
+
+      recognizer.onend = function () {
+        isRecording = false;
+        voiceBtnEl.classList.remove('recording');
+        voiceStatusEl.textContent = '语音状态：待机';
+      };
+
+      recognizer.onerror = function () {
+        isRecording = false;
+        voiceBtnEl.classList.remove('recording');
+        voiceStatusEl.textContent = '语音状态：异常，请重试';
+      };
+    } else {
+      voiceStatusEl.textContent = '语音状态：当前浏览器不支持';
+      appendMessage('meta', '当前浏览器不支持 Web Speech API，语音输入不可用。');
+    }
+
+    voiceBtnEl.addEventListener('click', function () {
+      if (!recognizer) return;
+      if (isRecording) {
+        recognizer.stop();
+      } else {
+        recognizer.start();
+      }
+    });
+
+    loadHistory();
+    renderHistory();
+
+    // ===== 3D Viewer (Model 2 + textures) =====
+    const canvas = document.getElementById('npc-canvas');
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x07090d);
+
+    const camera = new THREE.PerspectiveCamera(
+      44,
+      canvas.clientWidth / canvas.clientHeight,
+      0.1,
+      50000
+    );
+
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+
+    scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+    const key = new THREE.DirectionalLight(0xffffff, 1.0);
+    key.position.set(220, 320, 260);
+    scene.add(key);
+    const rim = new THREE.DirectionalLight(0x8eb8d8, 0.38);
+    rim.position.set(-280, 120, -180);
+    scene.add(rim);
+
+    function remapTextureUrl(url) {
+      const u = String(url).replace(/\\/g, '/');
+      if (/^(blob:|data:)/i.test(u)) return u;
+      const m = u.match(/([\w.-]+\.(?:jpg|jpeg|png))/i);
+      if (!m) return u;
+      return TEXTURE_DIR + m[1].replace(/\.jpeg$/i, '.jpg');
+    }
+
+    const manager = new THREE.LoadingManager();
+    manager.setURLModifier(function (url) {
+      const next = remapTextureUrl(url);
+      return next !== url ? next : url;
+    });
+
+    const controls = new OrbitControls(camera, canvas);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.08;
+    controls.screenSpacePanning = true;
+    controls.minDistance = 30;
+    controls.maxDistance = 5000;
+
+    let modelRoot = null;
+    let gestureActive = false;
+    let gestureAxis = 'x';
+    let gestureDuration = 0.78;
+    let gestureElapsed = 0;
+    let gestureAmplitude = 0.16;
+    let gestureCycles = 1.25;
+
+    function triggerNpcGesture() {
+      if (!modelRoot) return;
+      gestureActive = true;
+      gestureElapsed = 0;
+      gestureAxis = Math.random() < 0.5 ? 'x' : 'y';
+      gestureAmplitude = 0.11 + Math.random() * 0.08; // 轻微幅度
+      gestureCycles = 0.9 + Math.random() * 0.6;
+      modelRoot.rotation.x = 0;
+      modelRoot.rotation.y = 0;
+    }
+
+    function applyMaterialColorSpaces(object) {
+      object.traverse(function (child) {
+        if (!child.isMesh || !child.material) return;
+        const mats = Array.isArray(child.material) ? child.material : [child.material];
+        mats.forEach(function (m) {
+          function srgb(t) { if (t) { t.colorSpace = THREE.SRGBColorSpace; t.needsUpdate = true; } }
+          function lin(t) { if (t) { t.colorSpace = THREE.NoColorSpace; t.needsUpdate = true; } }
+          srgb(m.map); srgb(m.emissiveMap);
+          lin(m.normalMap); lin(m.bumpMap); lin(m.roughnessMap); lin(m.metalnessMap);
+          lin(m.aoMap); lin(m.alphaMap); lin(m.specularMap); lin(m.displacementMap);
+          if (m.clearcoatNormalMap) lin(m.clearcoatNormalMap);
+          m.needsUpdate = true;
+        });
+      });
+    }
+
+    new FBXLoader(manager).load(
+      MODEL_URL,
+      function (object) {
+        applyMaterialColorSpaces(object);
+        object.updateMatrixWorld(true);
+        const box = new THREE.Box3().setFromObject(object);
+        const center = box.getCenter(new THREE.Vector3());
+        object.position.sub(center);
+        object.updateMatrixWorld(true);
+
+        const box2 = new THREE.Box3().setFromObject(object);
+        const size = box2.getSize(new THREE.Vector3());
+        const maxDim = Math.max(size.x, size.y, size.z, 1e-6);
+        const normalizeScale = 220 / maxDim;
+        object.scale.setScalar(normalizeScale);
+        scene.add(object);
+        modelRoot = object;
+
+        const finalBox = new THREE.Box3().setFromObject(object);
+        const finalSize = finalBox.getSize(new THREE.Vector3());
+        const radius = Math.max(finalSize.x, finalSize.y, finalSize.z, 1e-6) * 0.5;
+        const dist = radius * 3.0;
+        camera.position.set(radius * 1.25, radius * 0.65, dist);
+        controls.target.set(0, 0, 0);
+        camera.near = 0.001;
+        camera.far = Math.max(5000, dist * 40);
+        camera.updateProjectionMatrix();
+        controls.update();
+      },
+      undefined,
+      function (err) {
+        console.error(err);
+        appendMessage('meta', '模型加载失败，请确认 模型/02-梵犀设计/02.FBX 与 texture 目录存在。');
+      }
+    );
+
+    function onResize() {
+      const w = canvas.clientWidth;
+      const h = canvas.clientHeight;
+      if (!w || !h) return;
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+      renderer.setSize(w, h, false);
+    }
+    window.addEventListener('resize', onResize);
+
+    const clock = new THREE.Clock();
+    function tick() {
+      requestAnimationFrame(tick);
+      const dt = clock.getDelta();
+      if (modelRoot && gestureActive) {
+        gestureElapsed += dt;
+        const t = Math.min(gestureElapsed / gestureDuration, 1);
+        const envelope = Math.sin(Math.PI * t); // 平滑起停，最后回到0
+        const wave = Math.sin(2 * Math.PI * gestureCycles * t);
+        const angle = envelope * wave * gestureAmplitude;
+        if (gestureAxis === 'x') {
+          modelRoot.rotation.x = angle;
+          modelRoot.rotation.y = 0;
+        } else {
+          modelRoot.rotation.y = angle;
+          modelRoot.rotation.x = 0;
+        }
+        if (t >= 1) {
+          gestureActive = false;
+          modelRoot.rotation.x = 0;
+          modelRoot.rotation.y = 0;
+        }
+      }
+      controls.update();
+      renderer.render(scene, camera);
+    }
+    tick();
+  </script>
+</body>
+</html>

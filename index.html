@@ -1060,6 +1060,94 @@
       }
     });
   }
+
+  var eighth = document.querySelectorAll('#timeline-board .timeline-node')[7];
+  if (eighth) {
+    eighth.addEventListener('click', function (e) {
+      e.stopPropagation();
+      var targetUrl = 'https://www.shenzhenmuseum.com/v/ljsxd/';
+      var docEl = document.documentElement;
+      var requestFullscreen =
+        docEl.requestFullscreen ||
+        docEl.webkitRequestFullscreen ||
+        docEl.mozRequestFullScreen ||
+        docEl.msRequestFullscreen;
+
+      // 用户手势内先尝试进入全屏，再跳转（浏览器可能仍会在跨站点后退出，全凭浏览器策略）
+      if (!document.fullscreenElement && requestFullscreen) {
+        try {
+          var result = requestFullscreen.call(docEl);
+          if (result && typeof result.then === 'function') {
+            result.finally(function () {
+              window.location.href = targetUrl;
+            });
+            return;
+          }
+        } catch (err) {
+          // ignore and fallback to navigation
+        }
+      }
+      window.location.href = targetUrl;
+    });
+  }
+})();
+</script>
+<script>
+(function () {
+  var nodes = Array.prototype.slice.call(
+    document.querySelectorAll('#timeline-board .timeline-node')
+  );
+  if (!nodes.length) return;
+
+  var shown = false;
+
+  function ensureBadge(node, idx) {
+    var badge = node.querySelector('.node-order-badge');
+    if (badge) return badge;
+    if (getComputedStyle(node).position === 'static') {
+      node.style.position = 'relative';
+    }
+    badge = document.createElement('span');
+    badge.className = 'node-order-badge';
+    badge.textContent = String(idx + 1);
+    badge.style.position = 'absolute';
+    badge.style.top = '6px';
+    badge.style.left = '6px';
+    badge.style.zIndex = '35';
+    badge.style.minWidth = '18px';
+    badge.style.height = '18px';
+    badge.style.padding = '0 5px';
+    badge.style.display = 'none';
+    badge.style.alignItems = 'center';
+    badge.style.justifyContent = 'center';
+    badge.style.borderRadius = '999px';
+    badge.style.border = '1px solid rgba(94,162,217,0.7)';
+    badge.style.background = 'rgba(7,9,13,0.82)';
+    badge.style.color = '#d6ecff';
+    badge.style.fontSize = '10px';
+    badge.style.fontWeight = '700';
+    badge.style.letterSpacing = '0.02em';
+    badge.style.pointerEvents = 'none';
+    node.appendChild(badge);
+    return badge;
+  }
+
+  function setVisible(v) {
+    shown = v;
+    nodes.forEach(function (node, idx) {
+      var badge = ensureBadge(node, idx);
+      badge.style.display = shown ? 'inline-flex' : 'none';
+    });
+  }
+
+  window.addEventListener('keydown', function (e) {
+    var tag = e.target && e.target.tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+    if (e.code === 'Slash' || e.key === '/') {
+      e.preventDefault();
+      setVisible(!shown);
+    }
+  });
 })();
 </script>
 <script>
