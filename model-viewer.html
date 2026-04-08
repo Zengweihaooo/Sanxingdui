@@ -108,6 +108,54 @@
     }
     #error.show { display: block; }
 
+    .side-model-chip {
+      position: fixed;
+      top: 50%;
+      z-index: 14;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(94, 162, 217, 0.38);
+      background: rgba(18, 22, 28, 0.68);
+      color: #9db2cb;
+      font-size: 11px;
+      letter-spacing: 0.06em;
+      transform: translateY(-50%);
+      opacity: 0.9;
+      pointer-events: none;
+      user-select: none;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      transition: opacity 0.25s ease;
+    }
+    #side-model-left { left: 16px; }
+    #side-model-right { right: 16px; text-align: right; }
+    .side-model-chip.hidden { opacity: 0; }
+    #thirds-grid {
+      position: fixed;
+      inset: 0;
+      z-index: 6;
+      pointer-events: none;
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+    }
+    #thirds-grid .thirds-col {
+      position: relative;
+    }
+    #thirds-grid .thirds-col:not(:last-child)::after {
+      content: '';
+      position: absolute;
+      top: 8%;
+      right: 0;
+      width: 1px;
+      height: 84%;
+      background: linear-gradient(
+        to bottom,
+        transparent,
+        rgba(94, 162, 217, 0.18),
+        transparent
+      );
+    }
+
     /* 悬浮文物说明：跟随光标（位置由 JS 写入 left/top），整体显隐 */
     #mask-info {
       position: fixed;
@@ -241,6 +289,13 @@
     </p>
   </div>
   <canvas id="viewport"></canvas>
+  <div id="thirds-grid" aria-hidden="true">
+    <div class="thirds-col"></div>
+    <div class="thirds-col"></div>
+    <div class="thirds-col"></div>
+  </div>
+  <div id="side-model-left" class="side-model-chip hidden" aria-hidden="true"></div>
+  <div id="side-model-right" class="side-model-chip hidden" aria-hidden="true"></div>
   <aside id="mask-info" aria-hidden="true">
     <div class="mask-info__frame">
       <div class="mask-info__inner">
@@ -258,12 +313,47 @@
     import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
     import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
-    /** 第 7 张卡片入口：固定加载 05 号模型（非按文件夹序号对齐） */
-    const MODEL_URL = new URL('./模型/05-梵犀设计/05.fbx', import.meta.url).href;
-    /** FBX 内常带 Blender/Sketchfab 的绝对路径，浏览器无法请求；把贴图重定向到本地 texture 目录 */
-    const TEXTURE_DIR = new URL('./模型/05-梵犀设计/texture/', import.meta.url).href;
+    /** 模型序列：4,5,6,1,2,3（左右键切换中间主模型） */
+    const MODEL_DEFS = [
+      {
+        id: 'm04',
+        label: '模型 4',
+        fbx: new URL('./模型/04-梵犀设计/01.fbx', import.meta.url).href,
+        textureDir: new URL('./模型/04-梵犀设计/texture/', import.meta.url).href
+      },
+      {
+        id: 'm05',
+        label: '模型 5',
+        fbx: new URL('./模型/05-梵犀设计/05.fbx', import.meta.url).href,
+        textureDir: new URL('./模型/05-梵犀设计/texture/', import.meta.url).href
+      },
+      {
+        id: 'm06',
+        label: '模型 6',
+        fbx: new URL('./模型/06-梵犀设计/done.fbx', import.meta.url).href,
+        textureDir: new URL('./模型/06-梵犀设计/texture/', import.meta.url).href
+      },
+      {
+        id: 'm01',
+        label: '模型 1',
+        fbx: new URL('./模型/01-梵犀设计/01.fbx', import.meta.url).href,
+        textureDir: new URL('./模型/01-梵犀设计/texture/', import.meta.url).href
+      },
+      {
+        id: 'm02',
+        label: '模型 2',
+        fbx: new URL('./模型/02-梵犀设计/02.FBX', import.meta.url).href,
+        textureDir: new URL('./模型/02-梵犀设计/texture/', import.meta.url).href
+      },
+      {
+        id: 'm03',
+        label: '模型 3',
+        fbx: new URL('./模型/03-梵犀设计/01.fbx', import.meta.url).href,
+        textureDir: new URL('./模型/03-梵犀设计/texture/', import.meta.url).href
+      }
+    ];
 
-    function remapTextureUrl(url) {
+    function remapTextureUrl(url, textureDir) {
       var u = String(url).replace(/\\/g, '/');
       if (/^(blob:|data:)/i.test(u)) return u;
       var lower = u.toLowerCase();
@@ -282,18 +372,14 @@
       var raw = u.substring(slash + 1, idx + extLen);
       if (!/^[\w.-]+\.(jpe?g|png)$/i.test(raw)) return u;
       var file = raw.replace(/\.jpeg$/i, '.jpg');
-      return TEXTURE_DIR + file;
+      return textureDir + file;
     }
-
-    var manager = new THREE.LoadingManager();
-    manager.setURLModifier(function (url) {
-      var next = remapTextureUrl(url);
-      return next !== url ? next : url;
-    });
 
     const canvas = document.getElementById('viewport');
     const loadingEl = document.getElementById('loading');
     const errorEl = document.getElementById('error');
+    const sideLeftEl = document.getElementById('side-model-left');
+    const sideRightEl = document.getElementById('side-model-right');
     const embedded = window.self !== window.top;
 
     var backBtn = document.getElementById('model-viewer-back');
@@ -322,12 +408,7 @@
       scene.background = new THREE.Color(0x07090d);
     }
 
-    const camera = new THREE.PerspectiveCamera(
-      50,
-      window.innerWidth / window.innerHeight,
-      0.1,
-      50000
-    );
+    const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.001, 50000);
 
     const renderer = new THREE.WebGLRenderer({
       canvas,
@@ -344,12 +425,7 @@
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
     const controls = new OrbitControls(camera, canvas);
-    controls.enableDamping = true;
-    controls.dampingFactor = 0.08;
-    controls.screenSpacePanning = true;
-    /* maxDistance 过小会在 controls.update() 里把相机拉近，导致调大 dist 无效；加载模型后再按包围体放宽 */
-    controls.minDistance = 0.01;
-    controls.maxDistance = 1e9;
+    controls.enabled = false;
 
     scene.add(new THREE.AmbientLight(0xffffff, 0.52));
     const key = new THREE.DirectionalLight(0xffffff, 1.05);
@@ -361,7 +437,10 @@
     rim.position.set(-300, 120, -200);
     scene.add(rim);
 
-    var modelRoot = null;
+    var modelItems = [];
+    var selectedModelIdx = 1;
+    var activeModelRoot = null;
+    var activeSpinY = 0;
     var maskInfoEl = document.getElementById('mask-info');
     var maskEyebrowEl = document.getElementById('mask-info-eyebrow');
     var maskTitleEl = document.getElementById('mask-info-title');
@@ -374,6 +453,11 @@
     var infoMode = 'full';
     var clock = new THREE.Clock();
     var modelSpinRadPerSec = 0.35;
+    var draggingModel = false;
+    var dragStartX = 0;
+    var dragStartY = 0;
+    var dragStartRotX = 0;
+    var dragStartRotY = 0;
     var lastClientX = 0;
     var lastClientY = 0;
     var panelPosX = 0;
@@ -381,6 +465,7 @@
     var panelFollowLerp = 0.24;
     var cursorPanelOffsetX = 20;
     var cursorPanelOffsetY = 18;
+    var layoutSideOffset = 180;
     var maskContentWrap = document.getElementById('mask-info-content');
     var lastAppliedMode = null;
     var contentSwitchTimer = null;
@@ -393,6 +478,10 @@
       x = Math.max(pad, Math.min(x, window.innerWidth - w - pad));
       y = Math.max(pad, Math.min(y, window.innerHeight - h - pad));
       return { x: x, y: y };
+    }
+
+    function getActiveItem() {
+      return modelItems[selectedModelIdx] || null;
     }
 
     var INFO_COPY = {
@@ -473,7 +562,13 @@
       if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
       if (e.repeat) return;
       var k = e.code;
-      if (k === 'Digit1' || k === 'Numpad1') {
+      if (k === 'ArrowLeft') {
+        e.preventDefault();
+        switchModelByDelta(-1);
+      } else if (k === 'ArrowRight') {
+        e.preventDefault();
+        switchModelByDelta(1);
+      } else if (k === 'Digit1' || k === 'Numpad1') {
         e.preventDefault();
         infoMode = 'ear';
         if (overModel) applyInfoMode('ear', true);
@@ -484,14 +579,30 @@
       }
     });
 
-    canvas.addEventListener('pointerdown', function () {
+    canvas.addEventListener('pointerdown', function (e) {
       pointerDown = true;
+      if (!activeModelRoot) return;
+      var rect = canvas.getBoundingClientRect();
+      mouseNdc.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+      mouseNdc.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+      raycaster.setFromCamera(mouseNdc, camera);
+      var hits = raycaster.intersectObject(activeModelRoot, true);
+      draggingModel = hits.length > 0;
+      if (!draggingModel) return;
+      dragStartX = e.clientX;
+      dragStartY = e.clientY;
+      var activeItem = getActiveItem();
+      if (!activeItem) return;
+      dragStartRotX = activeItem.userRotX || 0;
+      dragStartRotY = activeItem.userRotY || 0;
     });
     canvas.addEventListener('pointerup', function () {
       pointerDown = false;
+      draggingModel = false;
     });
     canvas.addEventListener('pointerleave', function () {
       pointerDown = false;
+      draggingModel = false;
       mouseNdc.set(-99, -99);
     });
     canvas.addEventListener('pointermove', function (e) {
@@ -500,94 +611,206 @@
       var rect = canvas.getBoundingClientRect();
       mouseNdc.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
       mouseNdc.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+      if (!draggingModel) return;
+      var activeItem = getActiveItem();
+      if (!activeItem) return;
+      var dx = e.clientX - dragStartX;
+      var dy = e.clientY - dragStartY;
+      activeItem.userRotY = dragStartRotY + dx * 0.008;
+      activeItem.userRotX = Math.max(-1.0, Math.min(1.0, dragStartRotX + dy * 0.005));
     });
 
-    const loader = new FBXLoader(manager);
-    loader.load(
-      MODEL_URL,
-      function (object) {
-        object.traverse(function (child) {
-          if (child.isMesh) {
-            child.castShadow = true;
-            child.receiveShadow = true;
-            if (child.material) {
-              var mats = Array.isArray(child.material) ? child.material : [child.material];
-              mats.forEach(function (m) {
-                function lin(t) {
-                  if (t) {
-                    t.colorSpace = THREE.NoColorSpace;
-                    t.needsUpdate = true;
-                  }
-                }
-                function srgb(t) {
-                  if (t) {
-                    t.colorSpace = THREE.SRGBColorSpace;
-                    t.needsUpdate = true;
-                  }
-                }
-                srgb(m.map);
-                srgb(m.emissiveMap);
-                lin(m.normalMap);
-                lin(m.bumpMap);
-                lin(m.roughnessMap);
-                lin(m.metalnessMap);
-                lin(m.aoMap);
-                lin(m.alphaMap);
-                lin(m.specularMap);
-                lin(m.displacementMap);
-                if (m.clearcoatNormalMap) lin(m.clearcoatNormalMap);
-                m.needsUpdate = true;
-              });
+    function applyMaterialColorSpaces(object) {
+      object.traverse(function (child) {
+        if (!child.isMesh) return;
+        child.castShadow = true;
+        child.receiveShadow = true;
+        if (!child.material) return;
+        var mats = Array.isArray(child.material) ? child.material : [child.material];
+        mats.forEach(function (m) {
+          function lin(t) {
+            if (t) {
+              t.colorSpace = THREE.NoColorSpace;
+              t.needsUpdate = true;
             }
           }
+          function srgb(t) {
+            if (t) {
+              t.colorSpace = THREE.SRGBColorSpace;
+              t.needsUpdate = true;
+            }
+          }
+          srgb(m.map);
+          srgb(m.emissiveMap);
+          lin(m.normalMap);
+          lin(m.bumpMap);
+          lin(m.roughnessMap);
+          lin(m.metalnessMap);
+          lin(m.aoMap);
+          lin(m.alphaMap);
+          lin(m.specularMap);
+          lin(m.displacementMap);
+          if (m.clearcoatNormalMap) lin(m.clearcoatNormalMap);
+          m.needsUpdate = true;
         });
-        scene.add(object);
-        modelRoot = object;
+      });
+    }
 
-        object.updateMatrixWorld(true);
-        var box = new THREE.Box3().setFromObject(object);
-        var size = box.getSize(new THREE.Vector3());
-        var center = box.getCenter(new THREE.Vector3());
-        controls.target.copy(center);
+    function loadModelDef(def) {
+      return new Promise(function (resolve, reject) {
+        var manager = new THREE.LoadingManager();
+        manager.setURLModifier(function (url) {
+          var next = remapTextureUrl(url, def.textureDir);
+          return next !== url ? next : url;
+        });
+        var loader = new FBXLoader(manager);
+        loader.load(
+          def.fbx,
+          function (object) {
+            applyMaterialColorSpaces(object);
+            object.updateMatrixWorld(true);
+            var box = new THREE.Box3().setFromObject(object);
+            var center = box.getCenter(new THREE.Vector3());
+            /* 统一把每个模型几何中心移到本地原点，避免左右栏位“看起来没居中” */
+            object.position.sub(center);
+            object.updateMatrixWorld(true);
+            box.setFromObject(object);
+            var size = box.getSize(new THREE.Vector3());
+            var maxDim = Math.max(size.x, size.y, size.z, 1e-6);
+            var normalizeScale = 220 / maxDim;
+            var holder = new THREE.Group();
+            holder.add(object);
+            holder.userData.baseScale = normalizeScale;
+            holder.userData.def = def;
+            scene.add(holder);
+            resolve({
+              id: def.id,
+              label: def.label,
+              holder: holder,
+              root: object,
+              userRotX: 0,
+              userRotY: 0
+            });
+          },
+          undefined,
+          reject
+        );
+      });
+    }
 
-        /* 用 FOV + 包围球算距离，framePadding 越大模型在画面里越小（可调） */
-        var maxDim = Math.max(size.x, size.y, size.z, 1e-6);
-        var radius = maxDim * 0.5;
-        var vRad = THREE.MathUtils.degToRad(camera.fov);
-        var aspect = Math.max(camera.aspect, 1e-6);
-        var hRad = 2 * Math.atan(Math.tan(vRad / 2) * aspect);
-        var distV = radius / Math.tan(vRad / 2);
-        var distH = radius / Math.tan(hRad / 2);
-        var dist = Math.max(distV, distH, 1e-6);
-        var framePadding = 1.72;
-        dist *= framePadding;
+    function updateSideChips() {
+      if (!sideLeftEl || !sideRightEl) return;
+      if (!modelItems.length) return;
+      var leftItem = modelItems[selectedModelIdx - 1] || null;
+      var rightItem = modelItems[selectedModelIdx + 1] || null;
+      if (leftItem) {
+        sideLeftEl.textContent = leftItem.label;
+        sideLeftEl.classList.remove('hidden');
+      } else {
+        sideLeftEl.classList.add('hidden');
+      }
+      if (rightItem) {
+        sideRightEl.textContent = rightItem.label;
+        sideRightEl.classList.remove('hidden');
+      } else {
+        sideRightEl.classList.add('hidden');
+      }
+    }
 
-        var viewDir = new THREE.Vector3(0.55, 0.35, 1).normalize();
-        camera.position.copy(center).add(viewDir.multiplyScalar(dist));
+    function frameSelectedModel() {
+      var selected = modelItems[selectedModelIdx];
+      if (!selected) return;
+      selected.holder.updateMatrixWorld(true);
+      var box = new THREE.Box3().setFromObject(selected.holder);
+      var size = box.getSize(new THREE.Vector3());
+      var center = box.getCenter(new THREE.Vector3());
+      var maxDim = Math.max(size.x, size.y, size.z, 1e-6);
+      var radius = maxDim * 0.5;
+      var aspect = Math.max(window.innerWidth / window.innerHeight, 1e-6);
+      var orthoPadding = 1.45;
+      var halfH = radius * orthoPadding;
+      var halfW = halfH * aspect;
+      camera.left = -halfW;
+      camera.right = halfW;
+      camera.top = halfH;
+      camera.bottom = -halfH;
+      /* 正交三分栏：左右中心点为视锥宽度的 1/3 */
+      layoutSideOffset = (halfW * 2) / 3;
 
-        camera.near = Math.max(0.001, dist / 50000);
-        camera.far = Math.max(5000, dist * 50 + radius * 10);
-        camera.updateProjectionMatrix();
+      var dist = Math.max(radius * 4.5, 1);
+      var viewDir = new THREE.Vector3(0.55, 0.35, 1).normalize();
+      camera.position.copy(center).add(viewDir.multiplyScalar(dist));
+      camera.lookAt(center);
+      camera.updateMatrixWorld();
+      camera.near = Math.max(0.001, dist / 50000);
+      camera.far = Math.max(5000, dist * 50 + radius * 10);
+      camera.updateProjectionMatrix();
+    }
 
-        controls.minDistance = Math.max(0.01, radius * 0.05);
-        controls.maxDistance = Math.max(dist * 8, radius * 50);
-        controls.update();
+    function updateModelLayout(doFrame) {
+      if (!modelItems.length) return;
+      var centerX = 0;
+      var sideOffset = layoutSideOffset;
+      var sideScaleFactor = 0.36;
+      modelItems.forEach(function (item, i) {
+        var delta = i - selectedModelIdx;
+        if (delta === 0) {
+          item.holder.visible = true;
+          item.holder.position.set(centerX, 0, 0);
+          item.holder.scale.setScalar(item.holder.userData.baseScale);
+        } else if (delta === 1) {
+          item.holder.visible = true;
+          item.holder.position.set(sideOffset, 0, 0);
+          item.holder.scale.setScalar(item.holder.userData.baseScale * sideScaleFactor);
+        } else if (delta === -1) {
+          item.holder.visible = true;
+          item.holder.position.set(-sideOffset, 0, 0);
+          item.holder.scale.setScalar(item.holder.userData.baseScale * sideScaleFactor);
+        } else {
+          item.holder.visible = false;
+        }
+      });
+      activeModelRoot = modelItems[selectedModelIdx].root;
+      modelItems.forEach(function (item, i) {
+        if (i !== selectedModelIdx) {
+          item.root.rotation.x = 0;
+          item.root.rotation.y = 0;
+          item.root.rotation.z = 0;
+        }
+      });
+      updateSideChips();
+      if (doFrame) frameSelectedModel();
+    }
 
+    function switchModelByDelta(delta) {
+      if (!modelItems.length) return;
+      var next = selectedModelIdx + delta;
+      if (next < 0 || next >= modelItems.length) return;
+      selectedModelIdx = next;
+      activeSpinY = 0;
+      infoMode = 'full';
+      applyInfoMode('full', true);
+      updateModelLayout(true);
+    }
+
+    Promise.all(MODEL_DEFS.map(loadModelDef))
+      .then(function (loaded) {
+        modelItems = loaded;
+        selectedModelIdx = 1; // 默认模型5在中间
+        updateModelLayout(true);
         loadingEl.classList.add('hidden');
-      },
-      undefined,
-      function (err) {
+      })
+      .catch(function (err) {
         console.error(err);
         showError(
-          '模型加载失败。请用本地 HTTP 服务打开站点（勿直接用 file://），并确认 模型/05-梵犀设计/05.fbx 与 texture 目录存在。'
+          '模型加载失败。请用本地 HTTP 服务打开站点（勿直接用 file://），并确认 04/05/06 模型与对应 texture 目录存在。'
         );
-      }
-    );
+      });
 
     function onResize() {
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);
+      frameSelectedModel();
+      updateModelLayout(false);
     }
     window.addEventListener('resize', onResize);
 
@@ -595,15 +818,24 @@
       requestAnimationFrame(tick);
       var dt = clock.getDelta();
 
-      if (modelRoot && !pointerDown) {
-        modelRoot.rotation.y += modelSpinRadPerSec * dt;
+      if (activeModelRoot) {
+        if (!pointerDown) activeSpinY += modelSpinRadPerSec * dt;
+        modelItems.forEach(function (item, i) {
+          if (i === selectedModelIdx) {
+            item.root.rotation.x = item.userRotX || 0;
+            item.root.rotation.y = activeSpinY + (item.userRotY || 0);
+            item.root.rotation.z = 0;
+          } else {
+            item.root.rotation.x = 0;
+            item.root.rotation.y = 0;
+            item.root.rotation.z = 0;
+          }
+        });
       }
 
-      controls.update();
-
-      if (modelRoot && maskInfoEl) {
+      if (activeModelRoot && maskInfoEl) {
         raycaster.setFromCamera(mouseNdc, camera);
-        var hits = raycaster.intersectObject(modelRoot, true);
+        var hits = raycaster.intersectObject(activeModelRoot, true);
         var over = hits.length > 0 && !pointerDown;
 
         if (over) {
