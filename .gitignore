@@ -3,3 +3,5 @@
 # 本地 API Key（可用 ln -s ~/Desktop/apikey.txt apikey.txt 链到桌面文件）
 apikey.txt
 
+scripts/node_modules/
+

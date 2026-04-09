@@ -29,8 +29,10 @@
       display: block;
       touch-action: none;
       cursor: grab;
+      transition: opacity 0.22s ease;
     }
     #viewport:active { cursor: grabbing; }
+    #viewport.is-switching { opacity: 0.62; }
     #ui {
       position: fixed;
       top: 0;
@@ -470,6 +472,7 @@
     var lastAppliedMode = null;
     var contentSwitchTimer = null;
     var contentEnterTimer = null;
+    var modelSwitchAnimTimer = null;
 
     function clampPanelToViewport(x, y, el) {
       var w = el.offsetWidth || 360;
@@ -791,6 +794,22 @@
       infoMode = 'full';
       applyInfoMode('full', true);
       updateModelLayout(true);
+      playModelSwitchAnimation();
+    }
+
+    function playModelSwitchAnimation() {
+      if (!canvas) return;
+      if (modelSwitchAnimTimer) {
+        clearTimeout(modelSwitchAnimTimer);
+        modelSwitchAnimTimer = null;
+      }
+      canvas.classList.remove('is-switching');
+      void canvas.offsetWidth;
+      canvas.classList.add('is-switching');
+      modelSwitchAnimTimer = setTimeout(function () {
+        modelSwitchAnimTimer = null;
+        canvas.classList.remove('is-switching');
+      }, 220);
     }
 
     Promise.all(MODEL_DEFS.map(loadModelDef))

@@ -1,0 +1,16 @@
+# Sanxingdui：复制本文件为 apikey.txt（与 NPC.html 同目录）。
+# 以 # 开头的行在加载时会被忽略。apikey.txt 已在 .gitignore，勿提交真实密钥。
+#
+# 若站点用 https 打开，浏览器会拦截本机 http://127.0.0.1:8788 与 ws://127.0.0.1:8789（混合内容），
+# 百炼北京 Key 无误也会失败；请用 http:// 打开本地页面，或为代理配置 https/wss。
+#
+# 百炼文档：北京地域 API base 为 https://dashscope.aliyuncs.com/api/v1 ，
+# 新加坡等国际站为 https://dashscope-intl.aliyuncs.com/api/v1 ，两地 API Key 不通用。
+
+REPLACE_WITH_VOLCENGINE_ARK_KEY
+REPLACE_WITH_ALIYUN_DASHSCOPE_KEY
+cn
+
+# 使用本地代理时，在下面增加两行（不要 #），与 NPC 面板一致：
+# http://127.0.0.1:8788/tts
+# ws://127.0.0.1:8789/realtime

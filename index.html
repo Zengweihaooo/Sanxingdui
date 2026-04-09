@@ -4,6 +4,7 @@
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>三星堆 · 遗址调查脉络</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.css"/>
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
 <script>
     tailwind.config = {
@@ -676,6 +677,43 @@
   ></iframe>
 </div>
 <!-- END: Model viewer overlay -->
+<!-- BEGIN: NPC overlay（脉络页第 17 张卡片打开，透明背景叠在页面上方） -->
+<div
+  id="npc-overlay"
+  class="fixed inset-0 z-[90] hidden"
+  aria-hidden="true"
+>
+  <button
+    id="npc-overlay-close"
+    type="button"
+    class="absolute top-3 right-3 z-[92] w-10 h-10 rounded-full bg-black/55 hover:bg-black/75 border border-white/25 text-white text-xl leading-none flex items-center justify-center shadow-lg"
+    aria-label="关闭 NPC 对话"
+  >×</button>
+  <iframe
+    id="npc-overlay-frame"
+    class="absolute inset-0 w-full h-full border-0 bg-transparent"
+    title="三星堆 NPC 对话"
+    allowfullscreen
+    allow="autoplay *; microphone *; display-capture *"
+  ></iframe>
+</div>
+<!-- END: NPC overlay -->
+<!-- BEGIN: Panorama overlay（脉络页第 18 张卡片打开） -->
+<div
+  id="panorama-overlay"
+  class="fixed inset-0 z-[95] hidden bg-black"
+  aria-hidden="true"
+>
+  <button
+    id="panorama-overlay-close"
+    type="button"
+    class="absolute top-3 right-3 z-[97] w-10 h-10 rounded-full bg-black/55 hover:bg-black/75 border border-white/25 text-white text-xl leading-none flex items-center justify-center shadow-lg"
+    aria-label="关闭全景预览"
+  >×</button>
+  <div id="panorama-viewer-a" class="absolute inset-0"></div>
+  <div id="panorama-viewer-b" class="absolute inset-0 opacity-0 pointer-events-none"></div>
+</div>
+<!-- END: Panorama overlay -->
 <script>
 (function () {
   var overlay = document.getElementById('model-viewer-overlay');
@@ -710,6 +748,308 @@
     overlay.setAttribute('aria-hidden', 'false');
     frame.src = 'model-viewer.html';
   };
+})();
+</script>
+<script>
+(function () {
+  var npcOverlay = document.getElementById('npc-overlay');
+  var npcFrame = document.getElementById('npc-overlay-frame');
+  var npcCloseBtn = document.getElementById('npc-overlay-close');
+  if (!npcOverlay || !npcFrame) return;
+
+  var npcSrc = 'NPC.html?embedded=1';
+
+  function closeNpcOverlay() {
+    npcOverlay.classList.add('hidden');
+    npcOverlay.setAttribute('aria-hidden', 'true');
+    npcFrame.src = 'about:blank';
+  }
+
+  window.sanxingduiOpenNpcOverlay = function () {
+    npcOverlay.classList.remove('hidden');
+    npcOverlay.setAttribute('aria-hidden', 'false');
+    npcFrame.src = npcSrc;
+  };
+
+  if (npcCloseBtn) {
+    npcCloseBtn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      closeNpcOverlay();
+    });
+  }
+
+  window.addEventListener('message', function (e) {
+    if (e.data && e.data.type === 'sanxingdui-close-npc-overlay') {
+      closeNpcOverlay();
+    }
+  });
+
+  window.addEventListener('keydown', function (e) {
+    if (e.key !== 'Escape') return;
+    if (npcOverlay.classList.contains('hidden')) return;
+    closeNpcOverlay();
+    e.preventDefault();
+  });
+})();
+</script>
+<script src="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.js"></script>
+<script>
+(function () {
+  var overlay = document.getElementById('panorama-overlay');
+  var closeBtn = document.getElementById('panorama-overlay-close');
+  var viewerAEl = document.getElementById('panorama-viewer-a');
+  var viewerBEl = document.getElementById('panorama-viewer-b');
+  var imagePaths = [];
+  var fallbackImagePaths = ['全景/全景1.JPG', '全景/全景2.jpg'];
+  var viewerA = null;
+  var viewerB = null;
+  var activeIndex = 0;
+  var currentImageIndex = 0;
+  var isTransitioning = false;
+  var imageListReadyPromise = null;
+  var transitionDurationMs = 3000;
+
+  if (!overlay || !closeBtn || !viewerAEl || !viewerBEl) return;
+  viewerAEl.style.transition = 'opacity ' + transitionDurationMs + 'ms ease';
+  viewerBEl.style.transition = 'opacity ' + transitionDurationMs + 'ms ease';
+
+  function getRequestFullscreenFn(el) {
+    return (
+      el.requestFullscreen ||
+      el.webkitRequestFullscreen ||
+      el.mozRequestFullScreen ||
+      el.msRequestFullscreen
+    );
+  }
+
+  function getExitFullscreenFn() {
+    return (
+      document.exitFullscreen ||
+      document.webkitExitFullscreen ||
+      document.mozCancelFullScreen ||
+      document.msExitFullscreen
+    );
+  }
+
+  function buildViewer(targetId, panoramaSrc, pitch, yaw, hfov) {
+    if (!window.pannellum || !window.pannellum.viewer) return null;
+    return window.pannellum.viewer(targetId, {
+      type: 'equirectangular',
+      panorama: panoramaSrc,
+      pitch: typeof pitch === 'number' ? pitch : 0,
+      yaw: typeof yaw === 'number' ? yaw : 0,
+      hfov: typeof hfov === 'number' ? hfov : 100,
+      autoLoad: true,
+      showZoomCtrl: true,
+      mouseZoom: true,
+      compass: false
+    });
+  }
+
+  function preloadImage(src) {
+    return new Promise(function (resolve) {
+      var img = new Image();
+      img.onload = function () { resolve(true); };
+      img.onerror = function () { resolve(false); };
+      img.src = src;
+    });
+  }
+
+  function pickFirstExistingForIndex(num) {
+    var candidates = [
+      '全景/全景' + num + '.JPG',
+      '全景/全景' + num + '.jpg',
+      '全景/全景' + num + '.JPEG',
+      '全景/全景' + num + '.jpeg',
+      '全景/全景' + num + '.PNG',
+      '全景/全景' + num + '.png'
+    ];
+    return Promise.all(candidates.map(function (src) {
+      return preloadImage(src).then(function (ok) {
+        return ok ? src : '';
+      });
+    })).then(function (results) {
+      for (var i = 0; i < results.length; i++) {
+        if (results[i]) return results[i];
+      }
+      return '';
+    });
+  }
+
+  function ensureImageListReady() {
+    if (imageListReadyPromise) return imageListReadyPromise;
+    imageListReadyPromise = (async function () {
+      var discovered = [];
+      var maxProbe = 80;
+      for (var n = 1; n <= maxProbe; n++) {
+        var src = await pickFirstExistingForIndex(n);
+        if (!src) break; // 按 1..n 连续编号读取
+        discovered.push(src);
+      }
+      imagePaths = discovered.length ? discovered : fallbackImagePaths.slice();
+      if (!imagePaths.length) imagePaths = ['全景/全景1.JPG'];
+      return imagePaths;
+    })();
+    return imageListReadyPromise;
+  }
+
+  function ensurePrimaryViewer() {
+    if (viewerA) return;
+    var firstImage = imagePaths[currentImageIndex] || fallbackImagePaths[0];
+    viewerA = buildViewer('panorama-viewer-a', firstImage);
+  }
+
+  function getActiveViewer() {
+    return activeIndex === 0 ? viewerA : viewerB;
+  }
+
+  function getInactiveViewerEl() {
+    return activeIndex === 0 ? viewerBEl : viewerAEl;
+  }
+
+  function getActiveViewerEl() {
+    return activeIndex === 0 ? viewerAEl : viewerBEl;
+  }
+
+  function resetPanoramaState() {
+    if (viewerA && typeof viewerA.destroy === 'function') viewerA.destroy();
+    if (viewerB && typeof viewerB.destroy === 'function') viewerB.destroy();
+    viewerA = null;
+    viewerB = null;
+    activeIndex = 0;
+    currentImageIndex = 0;
+    isTransitioning = false;
+    viewerAEl.style.opacity = '1';
+    viewerBEl.style.opacity = '0';
+    viewerAEl.classList.remove('pointer-events-none');
+    viewerBEl.classList.add('pointer-events-none');
+  }
+
+  async function openPanorama() {
+    overlay.classList.remove('hidden');
+    overlay.setAttribute('aria-hidden', 'false');
+    await ensureImageListReady();
+    ensurePrimaryViewer();
+
+    var currentViewer = getActiveViewer();
+    if (currentViewer && typeof currentViewer.resize === 'function') {
+      currentViewer.resize();
+    }
+
+    var requestFullscreen = getRequestFullscreenFn(overlay);
+    if (requestFullscreen && !document.fullscreenElement) {
+      try {
+        requestFullscreen.call(overlay);
+      } catch (e) {
+        // ignore fullscreen failures
+      }
+    }
+  }
+
+  function closePanorama() {
+    overlay.classList.add('hidden');
+    overlay.setAttribute('aria-hidden', 'true');
+    resetPanoramaState();
+    var exitFullscreen = getExitFullscreenFn();
+    if (exitFullscreen && document.fullscreenElement) {
+      try {
+        exitFullscreen.call(document);
+      } catch (e) {
+        // ignore fullscreen exit failures
+      }
+    }
+  }
+
+  function switchToNextPanoramaWithFade() {
+    if (isTransitioning) return;
+    if (!viewerA && !viewerB) return;
+    if (!imagePaths.length) return;
+
+    var sourceViewer = getActiveViewer();
+    if (!sourceViewer) return;
+
+    var pitch = sourceViewer.getPitch();
+    var yaw = sourceViewer.getYaw();
+    var hfov = sourceViewer.getHfov();
+
+    var targetEl = getInactiveViewerEl();
+    var currentEl = getActiveViewerEl();
+    var nextImageIndex = (currentImageIndex + 1) % imagePaths.length;
+    var nextImageSrc = imagePaths[nextImageIndex];
+
+    isTransitioning = true;
+    targetEl.classList.remove('pointer-events-none');
+    targetEl.style.opacity = '0';
+
+    if (activeIndex === 0) {
+      if (viewerB && typeof viewerB.destroy === 'function') viewerB.destroy();
+      viewerB = null;
+      if (!nextImageSrc) {
+        isTransitioning = false;
+        return;
+      }
+      viewerB = buildViewer('panorama-viewer-b', nextImageSrc, pitch, yaw, hfov);
+    } else {
+      if (viewerA && typeof viewerA.destroy === 'function') viewerA.destroy();
+      viewerA = null;
+      if (!nextImageSrc) {
+        isTransitioning = false;
+        return;
+      }
+      viewerA = buildViewer('panorama-viewer-a', nextImageSrc, pitch, yaw, hfov);
+    }
+
+    var targetViewer = activeIndex === 0 ? viewerB : viewerA;
+    if (!targetViewer) {
+      isTransitioning = false;
+      return;
+    }
+
+    setTimeout(function () {
+      if (typeof targetViewer.resize === 'function') targetViewer.resize();
+      targetEl.style.opacity = '1';
+      currentEl.style.opacity = '0';
+      currentEl.classList.add('pointer-events-none');
+      targetEl.classList.remove('pointer-events-none');
+
+      setTimeout(function () {
+        activeIndex = activeIndex === 0 ? 1 : 0;
+        currentImageIndex = nextImageIndex;
+        isTransitioning = false;
+      }, transitionDurationMs);
+    }, 80);
+  }
+
+  window.sanxingduiOpenPanorama = openPanorama;
+  window.sanxingduiClosePanorama = closePanorama;
+
+  closeBtn.addEventListener('click', function (e) {
+    e.stopPropagation();
+    closePanorama();
+  });
+
+  overlay.addEventListener('click', function (e) {
+    if (e.target === overlay) closePanorama();
+  });
+
+  window.addEventListener('keydown', function (e) {
+    if (overlay.classList.contains('hidden')) return;
+    if (e.key === 'Escape') {
+      closePanorama();
+      e.preventDefault();
+      return;
+    }
+    if (e.code === 'Space' || e.key === ' ') {
+      e.preventDefault();
+      switchToNextPanoramaWithFade();
+    }
+  });
+
+  document.addEventListener('fullscreenchange', function () {
+    if (!overlay.classList.contains('hidden') && !document.fullscreenElement) {
+      closePanorama();
+    }
+  });
 })();
 </script>
 <script>
@@ -1057,6 +1397,28 @@
         window.sanxingduiOpenModelViewer();
       } else {
         window.location.href = 'model-viewer.html';
+      }
+    });
+  }
+
+  var seventeenth = document.querySelectorAll('#timeline-board .timeline-node')[16];
+  if (seventeenth) {
+    seventeenth.addEventListener('click', function (e) {
+      e.stopPropagation();
+      if (typeof window.sanxingduiOpenNpcOverlay === 'function') {
+        window.sanxingduiOpenNpcOverlay();
+      } else {
+        window.location.href = 'NPC.html?embedded=1';
+      }
+    });
+  }
+
+  var eighteenth = document.querySelectorAll('#timeline-board .timeline-node')[17];
+  if (eighteenth) {
+    eighteenth.addEventListener('click', function (e) {
+      e.stopPropagation();
+      if (typeof window.sanxingduiOpenPanorama === 'function') {
+        window.sanxingduiOpenPanorama();
       }
     });
   }
