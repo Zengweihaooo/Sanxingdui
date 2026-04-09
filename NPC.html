@@ -49,10 +49,65 @@
       border-radius: 14px;
       background: linear-gradient(to bottom, rgba(7, 9, 13, 0.92), rgba(7, 9, 13, 0.72));
       display: grid;
-      grid-template-rows: auto 1fr auto;
+      grid-template-rows: 1fr auto;
       min-width: 0;
       box-shadow: 0 20px 52px rgba(0, 0, 0, 0.46);
       overflow: hidden;
+      transform: translateX(0);
+      transition:
+        left 0.48s cubic-bezier(0.22, 1, 0.36, 1),
+        top 0.48s cubic-bezier(0.22, 1, 0.36, 1),
+        bottom 0.48s cubic-bezier(0.22, 1, 0.36, 1),
+        right 0.48s cubic-bezier(0.22, 1, 0.36, 1),
+        width 0.48s cubic-bezier(0.22, 1, 0.36, 1),
+        max-height 0.48s cubic-bezier(0.22, 1, 0.36, 1),
+        border-radius 0.4s ease,
+        box-shadow 0.45s ease,
+        transform 0.48s cubic-bezier(0.22, 1, 0.36, 1),
+        grid-template-rows 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    /* 沉浸模式：隐藏整块对话台主体，仅底部居中悬浮输入条 */
+    .chat-pane.layout-cinematic {
+      left: 50%;
+      right: auto;
+      top: auto;
+      bottom: max(20px, env(safe-area-inset-bottom, 0px) + 12px);
+      width: min(560px, calc(100vw - 32px));
+      transform: translateX(-50%);
+      border-radius: 18px;
+      grid-template-rows: 0fr auto;
+      box-shadow:
+        0 10px 40px rgba(0, 0, 0, 0.5),
+        0 0 0 1px rgba(94, 162, 217, 0.12) inset,
+        0 0 60px rgba(94, 162, 217, 0.08);
+    }
+
+    .chat-desk-top {
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      min-width: 0;
+      overflow: hidden;
+      opacity: 1;
+      transition:
+        opacity 0.38s ease,
+        transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .chat-pane.layout-cinematic .chat-desk-top {
+      opacity: 0;
+      transform: translateY(6px);
+      pointer-events: none;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .chat-pane,
+      .chat-desk-top,
+      .viewer-reply-bubble,
+      .api-key-panel {
+        transition-duration: 0.01ms !important;
+      }
     }
 
     .chat-header {
@@ -99,6 +154,11 @@
       scroll-behavior: smooth;
     }
 
+    .chat-desk-top .messages {
+      flex: 1;
+      min-height: 0;
+    }
+
     .msg {
       max-width: 88%;
       border: 1px solid var(--line);
@@ -120,12 +180,102 @@
       background: rgba(20, 26, 34, 0.5);
     }
 
+    /* 简略/沉浸模式：以预览框右上为锚再向左移 15vw；小三角在左下指向模型 */
+    .viewer-reply-bubble {
+      position: absolute;
+      left: auto;
+      right: calc(14px + 15vw);
+      top: 48px;
+      z-index: 4;
+      max-width: min(360px, calc(100% - 28px - 15vw));
+      padding: 12px 14px 16px;
+      font-size: 13px;
+      line-height: 1.65;
+      border-radius: 14px 14px 6px 14px;
+      background: linear-gradient(155deg, rgba(34, 44, 58, 0.94), rgba(22, 28, 38, 0.92));
+      border: 1px solid rgba(94, 162, 217, 0.38);
+      box-shadow:
+        0 0 0 1px rgba(255, 255, 255, 0.05) inset,
+        0 14px 36px rgba(0, 0, 0, 0.42),
+        0 0 40px rgba(94, 162, 217, 0.1);
+      pointer-events: none;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      transform-origin: bottom left;
+      transform: translate(10px, -8px) scale(0.98);
+      opacity: 0;
+      visibility: hidden;
+      transition:
+        opacity 0.4s ease,
+        transform 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+        visibility 0s linear 0.45s;
+    }
+
+    .viewer-reply-bubble.is-visible {
+      transform: translate(0, 0) scale(1);
+      opacity: 1;
+      visibility: visible;
+      transition:
+        opacity 0.4s ease,
+        transform 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+        visibility 0s linear 0s;
+    }
+    .viewer-reply-bubble[hidden] {
+      display: none !important;
+      opacity: 0 !important;
+      visibility: hidden !important;
+      pointer-events: none !important;
+    }
+    .viewer-reply-bubble .latest-label {
+      display: block;
+      font-size: 9px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 8px;
+      opacity: 0.92;
+    }
+    .viewer-reply-bubble .viewer-reply-body {
+      white-space: pre-wrap;
+      word-break: break-word;
+      color: var(--text);
+    }
+    .viewer-reply-bubble::after {
+      content: '';
+      position: absolute;
+      left: 14px;
+      right: auto;
+      bottom: -7px;
+      width: 12px;
+      height: 12px;
+      background: linear-gradient(155deg, rgba(26, 34, 46, 0.96), rgba(18, 24, 32, 0.94));
+      border-right: 1px solid rgba(94, 162, 217, 0.25);
+      border-bottom: 1px solid rgba(94, 162, 217, 0.25);
+      transform: rotate(45deg);
+      border-radius: 2px;
+    }
+    .viewer-reply-bubble.is-placeholder {
+      border-style: dashed;
+      opacity: 0.85;
+    }
+    .viewer-reply-bubble.is-placeholder .viewer-reply-body {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
     .input-pane {
       border-top: 1px solid var(--line);
       padding: 12px;
       background: rgba(10, 14, 20, 0.82);
       display: grid;
       gap: 8px;
+      min-height: 0;
+    }
+
+    .chat-pane.layout-cinematic .input-pane {
+      border-top: none;
+      padding: 14px 14px 12px;
+      background: linear-gradient(to bottom, rgba(12, 16, 22, 0.94), rgba(8, 11, 16, 0.92));
     }
 
     .input-row {
@@ -177,6 +327,130 @@
       gap: 10px;
     }
 
+    /* 右下角可折叠：手动填写 / 保存方舟密钥（与 apikey.txt 自动填充并存） */
+    .api-key-dock {
+      position: fixed;
+      right: max(12px, env(safe-area-inset-right, 0px));
+      bottom: max(12px, env(safe-area-inset-bottom, 0px));
+      z-index: 12;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 8px;
+      pointer-events: none;
+    }
+    .api-key-dock > * {
+      pointer-events: auto;
+    }
+    .api-key-dock-toggle {
+      border: 1px solid var(--line);
+      background: rgba(16, 22, 30, 0.92);
+      color: #cfe3f8;
+      border-radius: 999px;
+      padding: 8px 14px;
+      font-size: 12px;
+      letter-spacing: 0.06em;
+      cursor: pointer;
+      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      transition: border-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+    }
+    .api-key-dock-toggle:hover {
+      border-color: var(--line-strong);
+      color: #fff;
+    }
+    .api-key-dock.is-open .api-key-dock-toggle {
+      border-color: rgba(94, 162, 217, 0.55);
+    }
+    .api-key-panel {
+      width: min(340px, calc(100vw - 24px));
+      max-height: 0;
+      opacity: 0;
+      overflow: hidden;
+      transform: translateY(6px);
+      transition:
+        max-height 0.38s cubic-bezier(0.22, 1, 0.36, 1),
+        opacity 0.3s ease,
+        transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .api-key-dock.is-open .api-key-panel {
+      max-height: 320px;
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .api-key-panel-inner {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 12px 12px 10px;
+      background: linear-gradient(160deg, rgba(14, 18, 26, 0.96), rgba(8, 11, 16, 0.94));
+      box-shadow: 0 16px 44px rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+    .api-key-save-row {
+      margin-top: 10px;
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      align-items: center;
+    }
+    .api-key-save-hint {
+      font-size: 10px;
+      color: var(--muted);
+      flex: 1;
+      min-width: 0;
+    }
+    .api-key-save-btn {
+      border-radius: 8px;
+      border: 1px solid var(--line-strong);
+      background: rgba(36, 52, 72, 0.9);
+      color: #e8f4ff;
+      padding: 6px 14px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .api-key-save-btn:hover {
+      border-color: var(--accent);
+    }
+
+    .api-config {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px 10px;
+      font-size: 11px;
+      color: var(--muted);
+    }
+    .api-config label {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-width: 0;
+    }
+    .api-config input {
+      width: 100%;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      background: var(--panel);
+      color: var(--text);
+      padding: 6px 8px;
+      font-size: 12px;
+      outline: none;
+    }
+    .api-config input:focus {
+      border-color: var(--line-strong);
+    }
+    @media (max-width: 520px) {
+      .api-config {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .send-btn:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+
     .viewer-pane {
       position: relative;
       width: 100%;
@@ -222,16 +496,18 @@
 </head>
 <body>
   <main class="app">
-    <section class="chat-pane">
-      <header class="chat-header">
-        <div class="title-wrap">
-          <h1>三星堆 NPC 对话台</h1>
-          <p>支持历史记录 · 文字输入 · 语音输入</p>
-        </div>
-        <button id="clear-history" class="ghost-btn" type="button">清空记录</button>
-      </header>
+    <section class="chat-pane" aria-label="三星堆 NPC 对话">
+      <div class="chat-desk-top">
+        <header class="chat-header">
+          <div class="title-wrap">
+            <h1>三星堆 NPC 对话台</h1>
+            <p id="chat-subtitle">完整对话台 · 按 <kbd style="font-size:10px;padding:1px 5px;border:1px solid rgba(94,162,217,0.4);border-radius:4px;">/</kbd> 切换沉浸对话（仅底部输入 + 全屏模型）</p>
+          </div>
+          <button id="clear-history" class="ghost-btn" type="button">清空记录</button>
+        </header>
 
-      <div id="messages" class="messages"></div>
+        <div id="messages" class="messages"></div>
+      </div>
 
       <div class="input-pane">
         <div class="input-row">
@@ -242,15 +518,39 @@
         <div class="helper">
           <span id="voice-status">语音状态：待机</span>
           <span>
-            当前回复：默认占位（待接 API） ·
+            对话：方舟 API 流式输出 · 朗读：本机 Web Speech（优先男声） ·
             <button id="tts-toggle" type="button" class="ghost-btn" style="padding:2px 8px;font-size:11px;">语音回复：开</button>
           </span>
         </div>
       </div>
     </section>
 
+    <div class="api-key-dock" id="api-key-dock">
+      <div class="api-key-panel" id="api-key-panel" role="region" aria-label="方舟 API 密钥">
+        <div class="api-key-panel-inner">
+          <div class="api-config">
+            <label>方舟 API Key（Bearer）
+              <input type="password" id="apiToken" name="apiToken" autocomplete="off" placeholder="粘贴控制台 API Key" />
+            </label>
+            <label>模型 ID（勿填 ep-）
+              <input type="text" id="apiModelId" name="apiModelId" spellcheck="false" placeholder="doubao-seed-2-0-lite-260215" />
+            </label>
+          </div>
+          <div class="api-key-save-row">
+            <span class="api-key-save-hint" id="api-key-save-hint">与 ark_quickstart_package 一致；仍可读同目录 apikey.txt</span>
+            <button type="button" class="api-key-save-btn" id="api-key-save-btn">保存</button>
+          </div>
+        </div>
+      </div>
+      <button type="button" class="api-key-dock-toggle" id="api-key-dock-toggle" aria-expanded="false" aria-controls="api-key-panel">密钥</button>
+    </div>
+
     <section class="viewer-pane">
       <canvas id="npc-canvas"></canvas>
+      <div id="viewer-reply-bubble" class="viewer-reply-bubble" hidden aria-live="polite">
+        <span class="latest-label">最新回复</span>
+        <div class="viewer-reply-body"></div>
+      </div>
       <div class="viewer-tag">模型 2（FBX + 纹理）</div>
     </section>
   </main>
@@ -261,8 +561,19 @@
     import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
     const STORAGE_KEY = 'sanxingdui_npc_chat_history_v1';
+    const STORAGE_ARK_TOKEN = 'sanxingdui_ark_api_token_v1';
+    const STORAGE_ARK_MODEL = 'sanxingdui_ark_model_id_v1';
+    /** 与 ark_quickstart_package/scripts/zero_dependency/mac/quickstart.sh 一致 */
+    const ARK_API_URL = 'https://ark.cn-beijing.volces.com/api/v3/chat/completions';
+    const ARK_DEFAULT_MODEL = 'doubao-seed-2-0-lite-260215';
+    /** 每次请求随用户问题一并发给 API（system 角色，与用户原文分离，效果等同「提示词 + 你的输入」） */
+    const NPC_SYSTEM_PROMPT =
+      '你现在在扮演三星堆的大祭司，我是一个科普游戏的玩家，请你以科普的形式回答我的问题，回复大概40字左右，根据具体的问题而定可以调整长短，要涵盖知识点和文化，有情感一点，可以用各种语气词';
+
     const MODEL_URL = new URL('./模型/02-梵犀设计/02.FBX', import.meta.url).href;
     const TEXTURE_DIR = new URL('./模型/02-梵犀设计/texture/', import.meta.url).href;
+    /** 与 NPC.html 同目录的 apikey.txt（可用符号链接指向 ~/Desktop/apikey.txt）；需用本地 HTTP 打开本页，file:// 下多数浏览器无法 fetch */
+    const APIKEY_TXT_URL = new URL('./apikey.txt', import.meta.url);
 
     // ===== Chat =====
     const messagesEl = document.getElementById('messages');
@@ -272,10 +583,35 @@
     const voiceStatusEl = document.getElementById('voice-status');
     const clearHistoryEl = document.getElementById('clear-history');
     const ttsToggleEl = document.getElementById('tts-toggle');
+    const chatPaneEl = document.querySelector('.chat-pane');
+    const chatDeskTopEl = document.querySelector('.chat-desk-top');
+    const chatSubtitleEl = document.getElementById('chat-subtitle');
+    const viewerReplyBubbleEl = document.getElementById('viewer-reply-bubble');
+    const viewerReplyBodyEl = viewerReplyBubbleEl
+      ? viewerReplyBubbleEl.querySelector('.viewer-reply-body')
+      : null;
+    const apiTokenEl = document.getElementById('apiToken');
+    const apiModelIdEl = document.getElementById('apiModelId');
+    const apiKeyDockEl = document.getElementById('api-key-dock');
+    const apiKeyDockToggleEl = document.getElementById('api-key-dock-toggle');
+    const apiKeySaveBtnEl = document.getElementById('api-key-save-btn');
+    const apiKeySaveHintEl = document.getElementById('api-key-save-hint');
 
     let history = [];
+    /** @type {'desk'|'cinematic'} */
+    var layoutMode = 'desk';
+    var bubbleEntryAnimate = false;
+    var bubbleHideTimer = null;
     let ttsEnabled = true;
     let ttsVoice = null;
+    let arkRequestPending = false;
+    var arkStreamActive = false;
+    var streamRenderPending = false;
+    var streamEllipsisIntervalId = null;
+    var streamEllipsisDots = 0;
+
+    const kbdSlash =
+      '<kbd style="font-size:10px;padding:1px 5px;border:1px solid rgba(94,162,217,0.4);border-radius:4px;">/</kbd>';
 
     function saveHistory() {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(history));
@@ -298,12 +634,129 @@
       }
     }
 
+    function getLastNpcMessage() {
+      for (var i = history.length - 1; i >= 0; i--) {
+        if (history[i].role === 'npc') return history[i];
+      }
+      return null;
+    }
+
+    function getStreamPlaceholderDots() {
+      if (streamEllipsisDots <= 0) return '';
+      return '.'.repeat(streamEllipsisDots);
+    }
+
+    function startStreamEllipsisTicker() {
+      streamEllipsisDots = 0;
+      if (streamEllipsisIntervalId) clearInterval(streamEllipsisIntervalId);
+      streamEllipsisIntervalId = setInterval(function () {
+        if (!arkStreamActive) {
+          stopStreamEllipsisTicker();
+          return;
+        }
+        streamEllipsisDots += 1;
+        renderHistory();
+      }, 1000);
+    }
+
+    function stopStreamEllipsisTicker() {
+      if (streamEllipsisIntervalId) {
+        clearInterval(streamEllipsisIntervalId);
+        streamEllipsisIntervalId = null;
+      }
+      streamEllipsisDots = 0;
+    }
+
+    function resetStreamSideEffects() {
+      stopStreamEllipsisTicker();
+    }
+
+    function setLayoutMode(next) {
+      var prev = layoutMode;
+      layoutMode = next === 'cinematic' ? 'cinematic' : 'desk';
+      if (chatPaneEl) {
+        chatPaneEl.classList.toggle('layout-cinematic', layoutMode === 'cinematic');
+      }
+      if (chatDeskTopEl) {
+        chatDeskTopEl.setAttribute('aria-hidden', layoutMode === 'cinematic' ? 'true' : 'false');
+      }
+      if (chatSubtitleEl) {
+        chatSubtitleEl.innerHTML =
+          layoutMode === 'desk'
+            ? '完整对话台 · 按 ' + kbdSlash + ' 进入沉浸模式（全屏模型 + 底部居中输入）'
+            : '沉浸模式 · 回复气泡锚在预览区右上 · 按 ' + kbdSlash + ' 恢复完整对话台';
+      }
+
+      if (viewerReplyBubbleEl) {
+        if (layoutMode === 'desk') {
+          viewerReplyBubbleEl.classList.remove('is-visible');
+          if (bubbleHideTimer) clearTimeout(bubbleHideTimer);
+          if (prev === 'cinematic') {
+            bubbleHideTimer = setTimeout(function () {
+              viewerReplyBubbleEl.hidden = true;
+              bubbleHideTimer = null;
+            }, 420);
+          } else {
+            viewerReplyBubbleEl.hidden = true;
+          }
+        } else {
+          if (bubbleHideTimer) {
+            clearTimeout(bubbleHideTimer);
+            bubbleHideTimer = null;
+          }
+          viewerReplyBubbleEl.hidden = false;
+          bubbleEntryAnimate = prev === 'desk';
+        }
+      }
+
+      renderHistory();
+    }
+
+    function fillViewerReplyBubbleContent() {
+      if (!viewerReplyBubbleEl || !viewerReplyBodyEl) return;
+      var lastNpc = getLastNpcMessage();
+      if (lastNpc) {
+        if (arkStreamActive && !String(lastNpc.text || '').trim()) {
+          viewerReplyBodyEl.textContent = getStreamPlaceholderDots();
+        } else {
+          viewerReplyBodyEl.textContent = lastNpc.text;
+        }
+        viewerReplyBubbleEl.classList.remove('is-placeholder');
+      } else {
+        viewerReplyBodyEl.textContent = '暂无 NPC 回复，发送一条消息后此处显示最新回复。';
+        viewerReplyBubbleEl.classList.add('is-placeholder');
+      }
+    }
+
+    function updateViewerReplyBubble() {
+      if (!viewerReplyBubbleEl || !viewerReplyBodyEl) return;
+      if (layoutMode !== 'cinematic') return;
+      fillViewerReplyBubbleContent();
+      var doEntry = bubbleEntryAnimate;
+      bubbleEntryAnimate = false;
+      if (doEntry) {
+        viewerReplyBubbleEl.classList.remove('is-visible');
+        void viewerReplyBubbleEl.offsetWidth;
+        requestAnimationFrame(function () {
+          viewerReplyBubbleEl.classList.add('is-visible');
+        });
+      } else {
+        viewerReplyBubbleEl.classList.add('is-visible');
+      }
+    }
+
     function renderHistory() {
       messagesEl.innerHTML = '';
-      history.forEach(function (item) {
+      if (layoutMode === 'cinematic') {
+        updateViewerReplyBubble();
+        return;
+      }
+      history.forEach(function (item, idx) {
         const div = document.createElement('div');
         div.className = 'msg ' + (item.role === 'user' ? 'user' : (item.role === 'meta' ? 'meta' : 'npc'));
-        div.textContent = item.text;
+        var isStreamingNpc =
+          item.role === 'npc' && arkStreamActive && idx === history.length - 1 && !String(item.text || '').trim();
+        div.textContent = isStreamingNpc ? getStreamPlaceholderDots() : item.text;
         messagesEl.appendChild(div);
       });
       messagesEl.scrollTop = messagesEl.scrollHeight;
@@ -313,15 +766,52 @@
       history.push({ role, text });
       saveHistory();
       renderHistory();
-      if (role === 'npc') speakText(text);
+      if (role === 'npc') {
+        speakText(text);
+        triggerNpcGestureForReply(text);
+      }
     }
 
+    function isZhSpeechVoice(v) {
+      var lang = (v.lang || '').toLowerCase();
+      var name = v.name || '';
+      return /zh|cmn|chinese/i.test(lang) || /zh|chinese|普通话|國語|简体|繁体/i.test(name);
+    }
+
+    /** 根据名称/引擎常见命名猜测男声（各系统不一致，尽力匹配） */
+    function isLikelyMaleSpeechVoice(v) {
+      var n = (v.name || '').toLowerCase();
+      return (
+        /yunyang|yunxi|kangkang|yunjian|云扬|云希|康康|云健|zhiyu|知语|hiuge|老孙|male|男声|\bmale\b/i.test(n) &&
+        !isLikelyFemaleSpeechVoice(v)
+      );
+    }
+
+    function isLikelyFemaleSpeechVoice(v) {
+      var n = (v.name || '').toLowerCase();
+      return /xiaoxiao|xiaoyi|yaoyao|huihui|female|女|晓晓|晓伊|瑶瑶|慧慧|meijia|mei-jia|siqi|tts.*female|neural.*female/i.test(n);
+    }
+
+    /**
+     * 方舟 Chat API 只返回文本，不含语音；朗读使用浏览器 Web Speech API。
+     * 若要用火山豆包语音合成，需在语音控制台单独开通 TTS（openspeech 等），与本页 Ark Key 不同体系。
+     */
     function pickTtsVoice() {
       if (!('speechSynthesis' in window)) return null;
-      const voices = window.speechSynthesis.getVoices() || [];
+      var voices = window.speechSynthesis.getVoices() || [];
       if (!voices.length) return null;
-      const zh = voices.find(function (v) { return /zh|cmn|chinese/i.test(v.lang || '') || /zh|chinese|普通话/i.test(v.name || ''); });
-      return zh || voices[0];
+      var zhVoices = voices.filter(isZhSpeechVoice);
+      var pool = zhVoices.length ? zhVoices : voices;
+
+      var male = pool.find(isLikelyMaleSpeechVoice);
+      if (male) return male;
+
+      var neutral = pool.find(function (v) {
+        return !isLikelyFemaleSpeechVoice(v);
+      });
+      if (neutral) return neutral;
+
+      return pool[0] || voices[0];
     }
 
     function speakText(text) {
@@ -329,39 +819,276 @@
       if (!text) return;
       try {
         window.speechSynthesis.cancel();
-        const utter = new SpeechSynthesisUtterance(text);
+        var utter = new SpeechSynthesisUtterance(text);
         if (!ttsVoice) ttsVoice = pickTtsVoice();
         if (ttsVoice) utter.voice = ttsVoice;
         utter.lang = (ttsVoice && ttsVoice.lang) || 'zh-CN';
         utter.rate = 1.0;
-        utter.pitch = 1.0;
+        if (ttsVoice && isLikelyMaleSpeechVoice(ttsVoice)) {
+          utter.pitch = 1.0;
+        } else if (ttsVoice && isLikelyFemaleSpeechVoice(ttsVoice)) {
+          utter.pitch = 0.88;
+        } else {
+          utter.pitch = 0.94;
+        }
         window.speechSynthesis.speak(utter);
       } catch (e) {
         // ignore
       }
     }
 
-    function getDefaultReply(userText) {
-      return '【默认回复】已收到你的问题：' + userText +
-        '\n目前页面已接好 UI 与本地历史记录；下一步你给我 API 接口和 Key 后，我会把这里替换为真实对话返回。';
+    function getFallbackReply(userText) {
+      return '【离线占位】已收到：' + userText + '\n请检查 API Key、模型 ID 或网络；若浏览器拦截跨域，请用本地静态服务打开本页或配置代理。';
     }
 
-    function sendCurrentText() {
+    function persistArkConfig() {
+      try {
+        if (apiTokenEl) localStorage.setItem(STORAGE_ARK_TOKEN, apiTokenEl.value.trim());
+        if (apiModelIdEl) {
+          localStorage.setItem(STORAGE_ARK_MODEL, (apiModelIdEl.value.trim() || ARK_DEFAULT_MODEL));
+        }
+      } catch (e) {
+        // ignore
+      }
+    }
+
+    function loadArkConfig() {
+      try {
+        const tok = localStorage.getItem(STORAGE_ARK_TOKEN);
+        if (tok && apiTokenEl) apiTokenEl.value = tok;
+        const mid = localStorage.getItem(STORAGE_ARK_MODEL);
+        if (mid && apiModelIdEl) apiModelIdEl.value = mid;
+        else if (apiModelIdEl && !apiModelIdEl.value.trim()) apiModelIdEl.value = ARK_DEFAULT_MODEL;
+      } catch (e) {
+        // ignore
+      }
+    }
+
+    /** 从同目录 apikey.txt 读取首行填入 Key（成功则覆盖输入框并写入 localStorage） */
+    async function loadApiKeyFromTxtFile() {
+      if (!apiTokenEl) return;
+      try {
+        const res = await fetch(APIKEY_TXT_URL.href, { cache: 'no-store' });
+        if (!res.ok) return;
+        const raw = (await res.text()).trim();
+        if (!raw) return;
+        const line = raw.split(/\r?\n/)[0].trim();
+        if (!line) return;
+        apiTokenEl.value = line;
+        persistArkConfig();
+      } catch (e) {
+        // 无文件、file:// 限制或离线：静默忽略
+      }
+    }
+
+    function scheduleStreamHistoryRedraw() {
+      if (streamRenderPending) return;
+      streamRenderPending = true;
+      requestAnimationFrame(function () {
+        streamRenderPending = false;
+        saveHistory();
+        renderHistory();
+      });
+    }
+
+    /**
+     * OpenAI 兼容 SSE 流式对话（方舟 ark.cn-beijing…/chat/completions 支持 stream: true）
+     * onDelta(chunk, accumulated) 可选，用于逐段更新 UI
+     */
+    async function streamArkChat(userText, onDelta) {
+      const token = (apiTokenEl && apiTokenEl.value.trim()) || '';
+      const model = (apiModelIdEl && apiModelIdEl.value.trim()) || ARK_DEFAULT_MODEL;
+      if (!token) throw new Error('未填写 API Key');
+
+      const res = await fetch(ARK_API_URL, {
+        method: 'POST',
+        headers: {
+          Authorization: 'Bearer ' + token,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: model,
+          messages: [
+            { role: 'system', content: NPC_SYSTEM_PROMPT },
+            { role: 'user', content: userText },
+          ],
+          max_tokens: 512,
+          temperature: 0.85,
+          stream: true,
+        }),
+      });
+
+      if (!res.ok) {
+        var errText = await res.text();
+        var errJson = {};
+        try {
+          errJson = JSON.parse(errText);
+        } catch (e) {
+          /* ignore */
+        }
+        var errMsg =
+          (errJson.error && errJson.error.message) || errJson.message || errText || 'HTTP ' + res.status;
+        throw new Error(errMsg);
+      }
+
+      if (!res.body || typeof res.body.getReader !== 'function') {
+        throw new Error('当前环境不支持流式响应读取');
+      }
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      var carry = '';
+      var full = '';
+
+      while (true) {
+        var step = await reader.read();
+        if (step.done) break;
+        carry += decoder.decode(step.value, { stream: true });
+        var lines = carry.split(/\r?\n/);
+        carry = lines.pop() || '';
+
+        for (var li = 0; li < lines.length; li++) {
+          var line = lines[li].trim();
+          if (!line || line.charAt(0) === ':') continue;
+          if (line === 'data: [DONE]') continue;
+          if (line.indexOf('data: ') !== 0) continue;
+          var payload = line.slice(6).trim();
+          if (!payload || payload === '[DONE]') continue;
+          try {
+            var json = JSON.parse(payload);
+            var choice = json.choices && json.choices[0];
+            if (!choice) continue;
+            var delta = choice.delta;
+            if (delta && delta.content) {
+              full += delta.content;
+              if (typeof onDelta === 'function') onDelta(delta.content, full);
+            }
+          } catch (parseErr) {
+            /* 半包或扩展字段，忽略 */
+          }
+        }
+      }
+
+      return full;
+    }
+
+    async function sendCurrentText() {
       const text = textInputEl.value.trim();
       if (!text) return;
+      if (arkRequestPending) return;
+
       appendMessage('user', text);
       textInputEl.value = '';
-      appendMessage('npc', getDefaultReply(text));
-      triggerNpcGesture();
+
+      const token = apiTokenEl && apiTokenEl.value.trim();
+      if (!token) {
+        appendMessage('meta', '请先在下方填写方舟 API Key（与 ark_quickstart_package 中 curl 的 Bearer 一致），保存后会记在本地浏览器。');
+        appendMessage('npc', getFallbackReply(text));
+        return;
+      }
+      persistArkConfig();
+
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+      }
+      resetStreamSideEffects();
+
+      arkRequestPending = true;
+      sendBtnEl.disabled = true;
+      arkStreamActive = true;
+      startStreamEllipsisTicker();
+      history.push({ role: 'npc', text: '' });
+      saveHistory();
+      renderHistory();
+
+      try {
+        var reply = await streamArkChat(text, function (_chunk, acc) {
+          if (history.length && history[history.length - 1].role === 'npc') {
+            history[history.length - 1].text = acc;
+            scheduleStreamHistoryRedraw();
+          }
+        });
+        streamRenderPending = false;
+        reply = String(reply || '').trim();
+        if (history.length && history[history.length - 1].role === 'npc') {
+          history[history.length - 1].text = reply || '（未返回有效正文）';
+        }
+        saveHistory();
+        renderHistory();
+        if (reply) {
+          speakText(reply);
+          triggerNpcGestureForReply(reply);
+        }
+      } catch (err) {
+        streamRenderPending = false;
+        if ('speechSynthesis' in window) {
+          window.speechSynthesis.cancel();
+        }
+        resetStreamSideEffects();
+        var msg = err && err.message ? err.message : String(err);
+        if (history.length && history[history.length - 1].role === 'npc') {
+          history.pop();
+        }
+        saveHistory();
+        history.push({ role: 'meta', text: '方舟 API：' + msg });
+        history.push({ role: 'npc', text: getFallbackReply(text) });
+        saveHistory();
+        renderHistory();
+        speakText(history[history.length - 1].text);
+        triggerNpcGestureForReply(history[history.length - 1].text);
+      } finally {
+        arkStreamActive = false;
+        stopStreamEllipsisTicker();
+        arkRequestPending = false;
+        sendBtnEl.disabled = false;
+        saveHistory();
+        renderHistory();
+      }
     }
 
-    sendBtnEl.addEventListener('click', sendCurrentText);
+    sendBtnEl.addEventListener('click', function () {
+      sendCurrentText();
+    });
     textInputEl.addEventListener('keydown', function (e) {
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
         sendCurrentText();
       }
     });
+    if (apiTokenEl) {
+      apiTokenEl.addEventListener('change', persistArkConfig);
+      apiTokenEl.addEventListener('blur', persistArkConfig);
+    }
+    if (apiModelIdEl) {
+      apiModelIdEl.addEventListener('change', persistArkConfig);
+      apiModelIdEl.addEventListener('blur', persistArkConfig);
+    }
+
+    if (apiKeyDockToggleEl && apiKeyDockEl) {
+      apiKeyDockToggleEl.addEventListener('click', function () {
+        var open = !apiKeyDockEl.classList.contains('is-open');
+        apiKeyDockEl.classList.toggle('is-open', open);
+        apiKeyDockToggleEl.setAttribute('aria-expanded', open ? 'true' : 'false');
+        if (open && apiTokenEl) {
+          setTimeout(function () {
+            apiTokenEl.focus();
+          }, 0);
+        }
+      });
+    }
+    if (apiKeySaveBtnEl) {
+      apiKeySaveBtnEl.addEventListener('click', function () {
+        persistArkConfig();
+        if (apiKeySaveHintEl) {
+          var prev = apiKeySaveHintEl.textContent;
+          apiKeySaveHintEl.textContent = '已保存到本机浏览器';
+          setTimeout(function () {
+            apiKeySaveHintEl.textContent = prev;
+          }, 2000);
+        }
+      });
+    }
+
     clearHistoryEl.addEventListener('click', function () {
       history = [];
       localStorage.removeItem(STORAGE_KEY);
@@ -383,6 +1110,15 @@
         }
       });
     }
+
+    window.addEventListener('keydown', function (e) {
+      var tag = e.target && e.target.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+      if (e.code === 'Slash' || e.key === '/') {
+        e.preventDefault();
+        setLayoutMode(layoutMode === 'desk' ? 'cinematic' : 'desk');
+      }
+    });
 
     // ===== Voice Input (Web Speech API) =====
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -434,8 +1170,10 @@
       }
     });
 
+    loadArkConfig();
+    void loadApiKeyFromTxtFile();
     loadHistory();
-    renderHistory();
+    setLayoutMode('desk');
 
     // ===== 3D Viewer (Model 2 + textures) =====
     const canvas = document.getElementById('npc-canvas');
@@ -484,22 +1222,29 @@
     controls.maxDistance = 5000;
 
     let modelRoot = null;
+    let modelBaseScale = 1;
+    let idleTime = 0;
     let gestureActive = false;
-    let gestureAxis = 'x';
     let gestureDuration = 0.78;
     let gestureElapsed = 0;
     let gestureAmplitude = 0.16;
     let gestureCycles = 1.25;
 
-    function triggerNpcGesture() {
+    /** 仅点头（rotation.x）；时长 = 字数×0.3s；幅度约为再上一版基线的 1/3 */
+    function triggerNpcGestureForReply(text) {
       if (!modelRoot) return;
+      var len = text ? String(text).length : 0;
+      gestureDuration = Math.max(0.3, len * 0.3);
+      gestureCycles = Math.min(16, Math.max(2.2, gestureDuration * 0.52));
+      var lenBoost = Math.min(0.11, len * 0.00225);
+      gestureAmplitude =
+        Math.min(0.29, 0.17 + Math.random() * 0.07 + lenBoost) / 3;
       gestureActive = true;
       gestureElapsed = 0;
-      gestureAxis = Math.random() < 0.5 ? 'x' : 'y';
-      gestureAmplitude = 0.11 + Math.random() * 0.08; // 轻微幅度
-      gestureCycles = 0.9 + Math.random() * 0.6;
       modelRoot.rotation.x = 0;
       modelRoot.rotation.y = 0;
+      modelRoot.rotation.z = 0;
+      modelRoot.scale.setScalar(modelBaseScale);
     }
 
     function applyMaterialColorSpaces(object) {
@@ -532,6 +1277,7 @@
         const size = box2.getSize(new THREE.Vector3());
         const maxDim = Math.max(size.x, size.y, size.z, 1e-6);
         const normalizeScale = 220 / maxDim;
+        modelBaseScale = normalizeScale;
         object.scale.setScalar(normalizeScale);
         scene.add(object);
         modelRoot = object;
@@ -569,23 +1315,34 @@
       requestAnimationFrame(tick);
       const dt = clock.getDelta();
       if (modelRoot && gestureActive) {
+        modelRoot.scale.setScalar(modelBaseScale);
         gestureElapsed += dt;
         const t = Math.min(gestureElapsed / gestureDuration, 1);
         const envelope = Math.sin(Math.PI * t); // 平滑起停，最后回到0
         const wave = Math.sin(2 * Math.PI * gestureCycles * t);
         const angle = envelope * wave * gestureAmplitude;
-        if (gestureAxis === 'x') {
-          modelRoot.rotation.x = angle;
-          modelRoot.rotation.y = 0;
-        } else {
-          modelRoot.rotation.y = angle;
-          modelRoot.rotation.x = 0;
-        }
+        modelRoot.rotation.x = angle;
+        modelRoot.rotation.y = 0;
+        modelRoot.rotation.z = 0;
         if (t >= 1) {
           gestureActive = false;
           modelRoot.rotation.x = 0;
           modelRoot.rotation.y = 0;
+          modelRoot.rotation.z = 0;
         }
+      } else if (modelRoot) {
+        idleTime += dt;
+        const b = idleTime * (Math.PI * 2) * 0.22;
+        const breath = Math.sin(b);
+        const breathAsym = Math.sin(b * 2 + 0.45) * 0.32;
+        const swayT = idleTime * 0.44;
+        const sway =
+          Math.sin(swayT) * 0.58 + Math.sin(swayT * 1.63 + 0.9) * 0.42;
+        modelRoot.rotation.x = breath * 0.022 + breathAsym * 0.007;
+        modelRoot.rotation.y = sway * 0.015;
+        modelRoot.rotation.z = Math.sin(idleTime * 0.28 + 0.3) * 0.005;
+        const sc = 1 + breath * 0.0058 + breathAsym * 0.0022;
+        modelRoot.scale.setScalar(modelBaseScale * sc);
       }
       controls.update();
       renderer.render(scene, camera);
