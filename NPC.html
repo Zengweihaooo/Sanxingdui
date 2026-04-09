@@ -569,8 +569,7 @@
             <span>对话：方舟流式 · 朗读：</span>
             <select id="tts-backend" title="选择回复朗读方式" aria-label="朗读引擎">
               <option value="webspeech">本机 Web Speech</option>
-              <option value="qwen">千问 TTS（HTTP 同步）</option>
-              <option value="qwen-realtime">千问 TTS 实时（WebSocket + 本地代理）</option>
+              <option value="doubao">豆包 TTS（HTTP V1 非流式）</option>
             </select>
             <button id="tts-toggle" type="button" class="ghost-btn" style="padding:2px 8px;font-size:11px;">语音回复：开</button>
           </span>
@@ -588,24 +587,21 @@
             <label>模型 ID（勿填 ep-）
               <input type="text" id="apiModelId" name="apiModelId" spellcheck="false" placeholder="doubao-seed-2-0-lite-260215" />
             </label>
-            <label class="api-config-full-row">百炼语音地域（须与控制台创建 API Key 的地域一致，见<a href="https://help.aliyun.com/zh/model-studio/get-api-key" target="_blank" rel="noopener noreferrer" style="color:#5ea2d9;">获取 API Key</a>）
-              <select id="dashscope-region" name="dashscopeRegion" title="华北2 用北京端点；新加坡等用国际端点">
-                <option value="cn">华北2（北京）· dashscope.aliyuncs.com</option>
-                <option value="intl">新加坡等 · dashscope-intl.aliyuncs.com</option>
-              </select>
+            <label class="api-config-full-row">豆包 App ID（app.appid）
+              <input type="text" id="doubaoAppId" name="doubaoAppId" spellcheck="false" placeholder="控制台中的 APP ID" />
             </label>
-            <label class="api-config-full-row">百炼 API Key（语音合成，选填；通用格式 sk-…，非 Coding Plan 的 sk-sp-…）
-              <input type="password" id="dashscopeToken" name="dashscopeToken" autocomplete="off" placeholder="控制台复制的百炼 API Key；勿提交仓库" />
+            <label class="api-config-full-row">豆包 Access Token（Authorization: Bearer;token）
+              <input type="password" id="doubaoAccessKey" name="doubaoAccessKey" autocomplete="off" placeholder="控制台 Token；勿提交仓库" />
             </label>
-            <label class="api-config-full-row">百炼 TTS 代理 URL（HTTP 同步；强烈建议填写；留空时若直连失败会自动试 127.0.0.1:8788）
-              <input type="text" id="dashscopeProxyUrl" name="dashscopeProxyUrl" spellcheck="false" placeholder="http://127.0.0.1:8788/tts（需先 node scripts/dashscope-tts-proxy.mjs）" />
+            <label class="api-config-full-row">豆包 app.token（请求体内 fake token，非空即可）
+              <input type="text" id="doubaoResourceId" name="doubaoResourceId" spellcheck="false" placeholder="fake_token" />
             </label>
-            <label class="api-config-full-row">百炼 TTS 实时 WS 代理（选「千问 TTS 实时」时必填；浏览器无法直连 dashscope WebSocket）
-              <input type="text" id="dashscopeRealtimeWsUrl" name="dashscopeRealtimeWsUrl" spellcheck="false" placeholder="ws://127.0.0.1:8789/realtime（需先 npm install && node scripts/dashscope-tts-realtime-proxy.mjs）" />
+            <label class="api-config-full-row">豆包 voice_type（音色）
+              <input type="text" id="doubaoSpeaker" name="doubaoSpeaker" spellcheck="false" placeholder="zh_male_M392_conversation_wvae_bigtts" />
             </label>
           </div>
           <div class="api-key-save-row">
-            <span class="api-key-save-hint" id="api-key-save-hint">apikey.txt：第 1 行方舟 Key、第 2 行百炼 Key、第 3 行可选 cn 或 intl（与控制台地域一致）、第 4 行可选 HTTP 代理 URL、第 5 行可选实时 WS 代理；以 # 开头的行为注释</span>
+            <span class="api-key-save-hint" id="api-key-save-hint">apikey.txt：第 1 行方舟 Key、第 2 行豆包 Access Token、第 3 行豆包 App ID、第 4 行 app.token(fake token, 非空即可)、第 5 行 voice_type；以 # 开头的行为注释</span>
             <button type="button" class="api-key-save-btn" id="api-key-save-btn">保存</button>
           </div>
         </div>
@@ -622,7 +618,7 @@
       <div class="viewer-tag">模型 2（FBX + 纹理）</div>
     </section>
   </main>
-  <!-- 千问 TTS 返回 URL 时用 DOM 音频播放；playsinline 利于 iOS；嵌入 iframe 时需配合父页 allow=autoplay -->
+  <!-- 豆包 TTS 合成音频播放元素；playsinline 利于 iOS；嵌入 iframe 时需配合父页 allow=autoplay -->
   <audio id="npc-tts-audio" preload="auto" playsinline hidden></audio>
 
   <script type="module">
@@ -633,27 +629,14 @@
     const STORAGE_KEY = 'sanxingdui_npc_chat_history_v1';
     const STORAGE_ARK_TOKEN = 'sanxingdui_ark_api_token_v1';
     const STORAGE_ARK_MODEL = 'sanxingdui_ark_model_id_v1';
-    const STORAGE_DASHSCOPE_TOKEN = 'sanxingdui_dashscope_api_token_v1';
-    const STORAGE_DASHSCOPE_PROXY = 'sanxingdui_dashscope_tts_proxy_v1';
-    const STORAGE_DASHSCOPE_REALTIME_WS = 'sanxingdui_dashscope_realtime_ws_v1';
-    const STORAGE_DASHSCOPE_REGION = 'sanxingdui_dashscope_region_v1';
+    const STORAGE_DOUBAO_APP_ID = 'sanxingdui_doubao_app_id_v1';
+    const STORAGE_DOUBAO_ACCESS_KEY = 'sanxingdui_doubao_access_key_v1';
+    const STORAGE_DOUBAO_RESOURCE_ID = 'sanxingdui_doubao_resource_id_v1';
+    const STORAGE_DOUBAO_SPEAKER = 'sanxingdui_doubao_speaker_v1';
     const STORAGE_TTS_BACKEND = 'sanxingdui_tts_backend_v1';
-    /**
-     * 语音合成（Qwen-TTS）同步 HTTP，与百炼文档 curl 一致（非 OpenAI 兼容模式的 Base URL）。
-     * 华北2（北京）：dashscope.aliyuncs.com；新加坡等：dashscope-intl.aliyuncs.com（须与同地域的 API Key 配套）。
-     * @see https://help.aliyun.com/zh/model-studio/qwen-tts-api
-     */
-    const DASHSCOPE_TTS_GENERATION_PATH =
-      '/api/v1/services/aigc/multimodal-generation/generation';
-    const DASHSCOPE_TTS_BASE_CN = 'https://dashscope.aliyuncs.com';
-    const DASHSCOPE_TTS_BASE_INTL = 'https://dashscope-intl.aliyuncs.com';
-    /** 与 dashscope-tts-proxy.mjs 默认端口一致；直连 CORS 失败时自动重试此地址 */
-    const DASHSCOPE_LOCAL_PROXY_DEFAULT = 'http://127.0.0.1:8788/tts';
-    /** 与 dashscope-tts-realtime-proxy.mjs 默认端口、路径一致 */
-    const DASHSCOPE_LOCAL_REALTIME_WS_DEFAULT = 'ws://127.0.0.1:8789/realtime';
-    /** 千问3-TTS-Flash；音色 Arthur（徐大爷），见文档「支持的系统音色」 */
-    const QWEN_TTS_MODEL = 'qwen3-tts-flash';
-    const QWEN_TTS_VOICE = 'Arthur';
+    const DOUBAO_TTS_V1_URL = 'https://openspeech.bytedance.com/api/v1/tts';
+    const DOUBAO_DEFAULT_APP_TOKEN = 'fake_token';
+    const DOUBAO_DEFAULT_VOICE_TYPE = 'zh_male_M392_conversation_wvae_bigtts';
     /** 与 ark_quickstart_package/scripts/zero_dependency/mac/quickstart.sh 一致 */
     const ARK_API_URL = 'https://ark.cn-beijing.volces.com/api/v3/chat/completions';
     const ARK_DEFAULT_MODEL = 'doubao-seed-2-0-lite-260215';
@@ -680,10 +663,10 @@
     const clearHistoryEl = document.getElementById('clear-history');
     const ttsToggleEl = document.getElementById('tts-toggle');
     const ttsBackendEl = document.getElementById('tts-backend');
-    const dashscopeTokenEl = document.getElementById('dashscopeToken');
-    const dashscopeProxyUrlEl = document.getElementById('dashscopeProxyUrl');
-    const dashscopeRealtimeWsUrlEl = document.getElementById('dashscopeRealtimeWsUrl');
-    const dashscopeRegionEl = document.getElementById('dashscope-region');
+    const doubaoAppIdEl = document.getElementById('doubaoAppId');
+    const doubaoAccessKeyEl = document.getElementById('doubaoAccessKey');
+    const doubaoResourceIdEl = document.getElementById('doubaoResourceId');
+    const doubaoSpeakerEl = document.getElementById('doubaoSpeaker');
     const appRootEl = document.querySelector('.app');
     const chatPaneEl = document.querySelector('.chat-pane');
     const chatDeskTopEl = document.querySelector('.chat-desk-top');
@@ -707,15 +690,9 @@
     let ttsEnabled = true;
     let ttsVoice = null;
     /** @type {AbortController|null} */
-    var qwenTtsAbort = null;
+    var doubaoTtsAbort = null;
     /** @type {HTMLAudioElement|null} */
-    var qwenTtsAudio = null;
-    /** @type {WebSocket|null} */
-    var qwenRealtimeWs = null;
-    /** @type {AudioBufferSourceNode[]} */
-    var qwenRtSources = [];
-    var qwenRtNextPlayTime = 0;
-    var qwenLocalProxyHintShown = false;
+    var doubaoTtsAudio = null;
     let arkRequestPending = false;
     var arkStreamActive = false;
     var streamRenderPending = false;
@@ -921,53 +898,31 @@
           /* ignore */
         }
       }
-      if (qwenTtsAbort) {
+      if (doubaoTtsAbort) {
         try {
-          qwenTtsAbort.abort();
+          doubaoTtsAbort.abort();
         } catch (e) {
           /* ignore */
         }
-        qwenTtsAbort = null;
+        doubaoTtsAbort = null;
       }
-      if (qwenTtsAudio) {
+      if (doubaoTtsAudio) {
         try {
-          if (qwenTtsAudio.__npcBlobUrl) {
+          if (doubaoTtsAudio.__npcBlobUrl) {
             try {
-              URL.revokeObjectURL(qwenTtsAudio.__npcBlobUrl);
+              URL.revokeObjectURL(doubaoTtsAudio.__npcBlobUrl);
             } catch (e) {
               /* ignore */
             }
-            qwenTtsAudio.__npcBlobUrl = null;
+            doubaoTtsAudio.__npcBlobUrl = null;
           }
-          qwenTtsAudio.pause();
-          qwenTtsAudio.removeAttribute('src');
-          qwenTtsAudio.load();
+          doubaoTtsAudio.pause();
+          doubaoTtsAudio.removeAttribute('src');
+          doubaoTtsAudio.load();
         } catch (e) {
           /* ignore */
         }
-        qwenTtsAudio = null;
-      }
-      if (qwenRealtimeWs) {
-        try {
-          qwenRealtimeWs.close();
-        } catch (e) {
-          /* ignore */
-        }
-        qwenRealtimeWs = null;
-      }
-      for (var ri = 0; ri < qwenRtSources.length; ri++) {
-        try {
-          qwenRtSources[ri].stop(0);
-        } catch (e) {
-          /* ignore */
-        }
-      }
-      qwenRtSources = [];
-      try {
-        var rtx = window.__sanxingduiAC;
-        if (rtx) qwenRtNextPlayTime = rtx.currentTime;
-      } catch (e) {
-        qwenRtNextPlayTime = 0;
+        doubaoTtsAudio = null;
       }
     }
 
@@ -1022,85 +977,24 @@
       }
     }
 
-    function ttsPlainTextForQwen(raw) {
+    function ttsPlainTextForSpeech(raw) {
       return String(raw || '')
         .replace(/\s+/g, ' ')
         .trim()
         .slice(0, 600);
     }
 
-    function genDashRtEventId() {
+    function createReqId() {
       try {
-        if (typeof crypto !== 'undefined' && crypto.randomUUID) {
-          return 'event_' + crypto.randomUUID().replace(/-/g, '');
-        }
+        if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID();
       } catch (e) {
         /* ignore */
       }
-      return 'event_' + String(Date.now()) + '_' + String(Math.random()).slice(2, 11);
-    }
-
-    function qwenRtEnsureAudioContext() {
-      var AC = window.AudioContext || window.webkitAudioContext;
-      if (!AC) return null;
-      return window.__sanxingduiAC || (window.__sanxingduiAC = new AC());
-    }
-
-    function qwenRtPlayPcm16LeChunk(ctx, u8) {
-      if (!u8 || !u8.byteLength || !ctx) return;
-      var len = u8.byteLength;
-      if (len % 2 !== 0) len -= 1;
-      if (len < 2) return;
-      var n = len / 2;
-      var buffer = ctx.createBuffer(1, n, 24000);
-      var ch = buffer.getChannelData(0);
-      var dv = new DataView(u8.buffer, u8.byteOffset, len);
-      for (var i = 0; i < n; i++) {
-        ch[i] = dv.getInt16(i * 2, true) / 32768;
-      }
-      var src = ctx.createBufferSource();
-      src.buffer = buffer;
-      src.connect(ctx.destination);
-      var t = Math.max(qwenRtNextPlayTime, ctx.currentTime);
-      src.start(t);
-      qwenRtNextPlayTime = t + buffer.duration;
-      qwenRtSources.push(src);
-    }
-
-    /** 百炼返回的 wav 链接常为 http://OSS；在 https 页面会被混合内容拦截，改为 https 通常可播。 */
-    function normalizeDashScopeAudioUrl(url) {
-      var u = String(url || '').trim();
-      if (!u) return u;
-      if (typeof window !== 'undefined' && window.isSecureContext && /^http:\/\//i.test(u)) {
-        return u.replace(/^http:\/\//i, 'https://');
-      }
-      return u;
+      return 'req_' + String(Date.now()) + '_' + String(Math.random()).slice(2, 10);
     }
 
     /**
-     * 当前页为 https（含嵌在 https 站点里的 iframe）时，浏览器会拦截对本机 http:// / ws:// 的请求（混合内容），
-     * 表现为代理已启动仍「失败」。请用 http:// 打开本地页面，或为代理配置 https。
-     */
-    function isLocalInsecureUrlBlockedBySecurePage(urlStr) {
-      if (typeof window === 'undefined' || !window.isSecureContext) return false;
-      if (!urlStr || typeof urlStr !== 'string') return false;
-      try {
-        var u = new URL(urlStr, window.location.href);
-        if (u.protocol !== 'http:' && u.protocol !== 'ws:') return false;
-        var h = (u.hostname || '').replace(/^\[|\]$/g, '').toLowerCase();
-        return h === 'localhost' || h === '127.0.0.1' || h === '::1';
-      } catch (e) {
-        return false;
-      }
-    }
-
-    function getDashScopeDirectTtsUrl() {
-      var intl = dashscopeRegionEl && dashscopeRegionEl.value === 'intl';
-      return (intl ? DASHSCOPE_TTS_BASE_INTL : DASHSCOPE_TTS_BASE_CN) + DASHSCOPE_TTS_GENERATION_PATH;
-    }
-
-    /**
-     * 方舟 Chat API 只返回文本；朗读可选本机 Web Speech 或阿里云百炼千问 TTS（需百炼 Key 或本地代理）。
+     * 方舟 Chat API 只返回文本；朗读可选本机 Web Speech 或豆包 TTS（HTTP V1 非流式）。
      */
     function pickTtsVoice() {
       if (!('speechSynthesis' in window)) return null;
@@ -1205,8 +1099,8 @@
         pushTtsMeta(
           msg ||
             (IS_EMBEDDED
-              ? '嵌入页内本机朗读常被浏览器限制。请在「朗读」中选「千问 TTS」，或新标签单独打开 NPC.html。'
-              : '本机语音多次重试仍失败。可试：换 Safari/Chrome、系统设置 → 辅助功能 → 「朗读内容」、或改用「千问 TTS」。')
+              ? '嵌入页内本机朗读常被浏览器限制。请在「朗读」中选「豆包 TTS」，或新标签单独打开 NPC.html。'
+              : '本机语音多次重试仍失败。可试：换 Safari/Chrome、系统设置 → 辅助功能 → 「朗读内容」、或改用「豆包 TTS」。')
         );
       }
 
@@ -1244,7 +1138,7 @@
           if (code === 'canceled' || code === 'interrupted') return;
           if (code === 'not-allowed') {
             finalizeFail(
-              '朗读被浏览器拦截（not-allowed）。请先在本页内点击输入区或「发送」再试，或改用「千问 TTS」。'
+              '朗读被浏览器拦截（not-allowed）。请先在本页内点击输入区或「发送」再试，或改用「豆包 TTS」。'
             );
             return;
           }
@@ -1283,368 +1177,83 @@
       startSpeaking();
     }
 
-    /**
-     * 百炼 Qwen-TTS-Realtime：WebSocket 文本帧协议与官方 SDK 一致（server_commit：append → session.finish）。
-     * 浏览器无法设置握手 Authorization，须通过 scripts/dashscope-tts-realtime-proxy.mjs 转发。
-     */
-    function speakTextQwenRealtimeAsync(text) {
-      var plain = ttsPlainTextForQwen(text);
+    async function speakTextDoubaoAsync(text) {
+      var plain = ttsPlainTextForSpeech(text);
       if (!plain) return;
-      var wsUrl =
-        (dashscopeRealtimeWsUrlEl && dashscopeRealtimeWsUrlEl.value.trim()) ||
-        DASHSCOPE_LOCAL_REALTIME_WS_DEFAULT;
-      if (isLocalInsecureUrlBlockedBySecurePage(wsUrl)) {
+      var appId = doubaoAppIdEl && doubaoAppIdEl.value.trim();
+      var accessToken = doubaoAccessKeyEl && doubaoAccessKeyEl.value.trim();
+      var appToken =
+        (doubaoResourceIdEl && doubaoResourceIdEl.value.trim()) || DOUBAO_DEFAULT_APP_TOKEN;
+      var voiceType = (doubaoSpeakerEl && doubaoSpeakerEl.value.trim()) || DOUBAO_DEFAULT_VOICE_TYPE;
+      if (!appId || !accessToken) {
         pushTtsMeta(
-          '当前页面为 https，浏览器会拦截本机 ws:// 实时 TTS 代理（混合内容）。请用 http:// 打开本地站点后再试，或为代理配置 wss://。'
+          '已选「豆包 TTS」但缺少 App ID 或 Access Token，请在右下角密钥面板补全。'
         );
         speakTextWebSpeech(text);
         return;
       }
-      if (!/^wss?:\/\//i.test(wsUrl)) {
-        pushTtsMeta(
-          '「千问 TTS 实时」需要可访问的 ws:// 或 wss:// 代理地址（默认 ' +
-            DASHSCOPE_LOCAL_REALTIME_WS_DEFAULT +
-            '）。请先 cd scripts && npm install && node dashscope-tts-realtime-proxy.mjs 并 export DASHSCOPE_API_KEY。'
-        );
-        speakTextWebSpeech(text);
-        return;
-      }
+      doubaoTtsAbort = new AbortController();
+      var ac = doubaoTtsAbort;
 
-      var ctxAudio = qwenRtEnsureAudioContext();
-      if (!ctxAudio) {
-        pushTtsMeta('当前环境无法创建 Web Audio（AudioContext），已改本机朗读。');
-        speakTextWebSpeech(text);
-        return;
-      }
       try {
-        var r = ctxAudio.resume();
-        if (r && typeof r.then === 'function') r.catch(function () {});
-      } catch (e) {
-        /* ignore */
-      }
-      qwenRtNextPlayTime = Math.max(qwenRtNextPlayTime, ctxAudio.currentTime);
-
-      var ws;
-      try {
-        ws = new WebSocket(wsUrl);
-      } catch (e) {
-        pushTtsMeta(
-          '实时 TTS：无法创建 WebSocket（' + (e && e.message ? e.message : String(e)) + '）。'
-        );
-        speakTextWebSpeech(text);
-        return;
-      }
-      qwenRealtimeWs = ws;
-
-      var doneFallback = false;
-      function fallbackOnce(msg) {
-        if (doneFallback) return;
-        doneFallback = true;
-        try {
-          ws.close();
-        } catch (e) {
-          /* ignore */
-        }
-        if (qwenRealtimeWs === ws) qwenRealtimeWs = null;
-        pushTtsMeta(msg);
-        speakTextWebSpeech(text);
-      }
-
-      var safetyTimer = window.setTimeout(function () {
-        if (qwenRealtimeWs === ws) {
-          try {
-            ws.close();
-          } catch (e) {
-            /* ignore */
-          }
-          qwenRealtimeWs = null;
-        }
-      }, 180000);
-
-      var appendSent = false;
-      var appendKickTimer = null;
-      function sendAppendAndFinish() {
-        if (appendSent || qwenRealtimeWs !== ws) return;
-        appendSent = true;
-        if (appendKickTimer != null) {
-          window.clearTimeout(appendKickTimer);
-          appendKickTimer = null;
-        }
-        try {
-          var maxChunk = 1200;
-          for (var o = 0; o < plain.length; o += maxChunk) {
-            ws.send(
-              JSON.stringify({
-                event_id: genDashRtEventId(),
-                type: 'input_text_buffer.append',
-                text: plain.slice(o, o + maxChunk),
-              })
-            );
-          }
-          ws.send(
-            JSON.stringify({
-              event_id: genDashRtEventId(),
-              type: 'session.finish',
-            })
-          );
-        } catch (sendErr) {
-          window.clearTimeout(safetyTimer);
-          fallbackOnce(
-            '实时 TTS 发送失败：' + (sendErr && sendErr.message ? sendErr.message : String(sendErr))
-          );
-        }
-      }
-
-      ws.onopen = function () {
-        if (qwenRealtimeWs !== ws) return;
-        try {
-          ws.send(
-            JSON.stringify({
-              event_id: genDashRtEventId(),
-              type: 'session.update',
-              session: {
-                voice: QWEN_TTS_VOICE,
-                mode: 'server_commit',
-                response_format: 'pcm',
-                sample_rate: 24000,
-                language_type: 'Chinese',
-              },
-            })
-          );
-          appendKickTimer = window.setTimeout(function () {
-            if (qwenRealtimeWs === ws) sendAppendAndFinish();
-          }, 480);
-        } catch (sendErr) {
-          window.clearTimeout(safetyTimer);
-          fallbackOnce(
-            '实时 TTS 发送失败：' + (sendErr && sendErr.message ? sendErr.message : String(sendErr))
-          );
-        }
-      };
-
-      ws.onmessage = function (ev) {
-        if (qwenRealtimeWs !== ws) return;
-        var raw = ev.data;
-        if (typeof raw !== 'string') return;
-        var evo;
-        try {
-          evo = JSON.parse(raw);
-        } catch (parseErr) {
-          return;
-        }
-        var typ = evo.type || '';
-        if (typ === 'session.updated') {
-          sendAppendAndFinish();
-          return;
-        }
-        if (typ === 'response.audio.delta') {
-          var b64 = evo.delta;
-          if (typeof b64 !== 'string' || !b64) {
-            var aud = evo.audio;
-            if (aud && typeof aud.delta === 'string') b64 = aud.delta;
-          }
-          if (typeof b64 !== 'string' || !b64) return;
-          try {
-            var binStr = atob(b64);
-            var u8 = new Uint8Array(binStr.length);
-            for (var i = 0; i < binStr.length; i++) {
-              u8[i] = binStr.charCodeAt(i) & 0xff;
-            }
-            qwenRtPlayPcm16LeChunk(ctxAudio, u8);
-          } catch (decErr) {
-            /* ignore bad chunk */
-          }
-          return;
-        }
-        if (typ === 'session.finished') {
-          window.clearTimeout(safetyTimer);
-          if (qwenRealtimeWs === ws) {
-            try {
-              ws.close();
-            } catch (e) {
-              /* ignore */
-            }
-            qwenRealtimeWs = null;
-          }
-          return;
-        }
-        if (
-          typ === 'error' ||
-          typ === 'response.error' ||
-          (evo.error && (evo.error.message || typeof evo.error === 'string'))
-        ) {
-          window.clearTimeout(safetyTimer);
-          var em =
-            (evo.error && evo.error.message) ||
-            (typeof evo.error === 'string' ? evo.error : '') ||
-            evo.message ||
-            '服务端 error 事件';
-          fallbackOnce('实时 TTS：' + em);
-        }
-      };
-
-      ws.onerror = function () {
-        window.clearTimeout(safetyTimer);
-        if (doneFallback) return;
-        fallbackOnce(
-          '实时 TTS：WebSocket 异常。北京地域 Key：代理勿设 DASHSCOPE_REGION=intl；确认已 cd scripts && npm install && node dashscope-tts-realtime-proxy.mjs 且已 export DASHSCOPE_API_KEY。若页面是 https，本机 ws:// 会被拦截，请改用 http:// 打开本站。'
-        );
-      };
-
-      ws.onclose = function () {
-        window.clearTimeout(safetyTimer);
-        if (qwenRealtimeWs === ws) qwenRealtimeWs = null;
-      };
-    }
-
-    async function speakTextQwenAsync(text) {
-      var plain = ttsPlainTextForQwen(text);
-      if (!plain) return;
-      var proxy = dashscopeProxyUrlEl && dashscopeProxyUrlEl.value.trim();
-      var key = dashscopeTokenEl && dashscopeTokenEl.value.trim();
-      if (!proxy && !key) {
-        pushTtsMeta(
-          '已选「千问 TTS」但未填写百炼 API Key，也未填代理 URL。说明：本页用的是「语音合成 Qwen-TTS」HTTP 同步接口（返回 wav URL），不是文档里「实时语音合成 Qwen-TTS-Realtime」的 WebSocket。浏览器几乎无法直连 dashscope（CORS），请运行 node scripts/dashscope-tts-proxy.mjs 并 export DASHSCOPE_API_KEY，代理填 http://127.0.0.1:8788/tts；或用 node scripts/dashscope-tts-test.mjs 自测 Key。'
-        );
-        speakTextWebSpeech(text);
-        return;
-      }
-
-      if (proxy && isLocalInsecureUrlBlockedBySecurePage(proxy)) {
-        pushTtsMeta(
-          '当前页面为 https，浏览器会拦截对本机 http:// 百炼代理的请求（混合内容）。北京地域 Key 无误时也仍会失败。请用 http://127.0.0.1:端口 打开本站（勿用 https），或将页面与代理部署为同源可访问的地址。'
-        );
-        speakTextWebSpeech(text);
-        return;
-      }
-
-      qwenTtsAbort = new AbortController();
-      var ac = qwenTtsAbort;
-
-      async function requestQwenTtsAudioUrl(endpoint, headers, bodyObj) {
-        var res = await fetch(endpoint, {
+        var res = await fetch(DOUBAO_TTS_V1_URL, {
           method: 'POST',
-          headers: headers,
-          body: JSON.stringify(bodyObj),
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: 'Bearer;' + accessToken,
+          },
+          body: JSON.stringify({
+            app: {
+              appid: appId,
+              token: appToken,
+              cluster: 'volcano_tts',
+            },
+            user: {
+              uid: 'sanxingdui_npc_user',
+            },
+            audio: {
+              voice_type: voiceType,
+              encoding: 'mp3',
+              speed_ratio: 1.0,
+              rate: 24000,
+            },
+            request: {
+              reqid: createReqId(),
+              text: plain,
+              operation: 'query',
+            },
+          }),
           signal: ac.signal,
         });
-        var rawText = await res.text();
-        var data = null;
+        if (!res.ok) {
+          var errText = await res.text();
+          throw new Error('HTTP ' + res.status + ': ' + String(errText || '').slice(0, 200));
+        }
+        var raw = await res.text();
+        var obj = null;
         try {
-          data = rawText ? JSON.parse(rawText) : null;
-        } catch (parseErr) {
-          throw new Error('百炼返回非 JSON（HTTP ' + res.status + '）：' + rawText.slice(0, 240));
+          obj = raw ? JSON.parse(raw) : null;
+        } catch (e) {
+          throw new Error('豆包返回非 JSON：' + String(raw || '').slice(0, 200));
         }
-        if (ac !== qwenTtsAbort) return '';
-        if (!res.ok || !data) {
-          throw new Error((data && (data.message || data.code)) || 'HTTP ' + res.status);
+        if (!obj) throw new Error('豆包返回为空');
+        if (ac !== doubaoTtsAbort) return;
+        if (Number(obj.code) !== 3000) {
+          throw new Error((obj && obj.message) || ('豆包返回错误码 ' + String(obj.code)));
         }
-        if (data.code != null && String(data.code).trim() !== '') {
-          throw new Error(data.message || String(data.code));
+        if (typeof obj.data !== 'string' || !obj.data) {
+          throw new Error('豆包未返回音频 data 字段');
         }
-        var sc = data.status_code;
-        if (sc != null && Number(sc) !== 200) {
-          throw new Error(data.message || '百炼返回 status_code=' + sc);
-        }
-        var out = data.output || {};
-        var aud = out.audio || {};
-        var url = normalizeDashScopeAudioUrl(aud.url || aud.audio_url);
-        if (!url) {
-          var dbg = '';
-          try {
-            dbg = JSON.stringify(data).slice(0, 320);
-          } catch (e) {
-            dbg = String(data);
-          }
-          throw new Error('响应中无音频 URL：' + dbg);
-        }
-        return url;
-      }
-
-      function isLikelyBrowserCorsOrNetwork(err) {
-        var nm = err && err.message ? err.message : String(err);
-        return /Failed to fetch|NetworkError|Load failed|networkerror|ECONNREFUSED|fetch.*failed|blocked by CORS/i.test(nm);
-      }
-
-      try {
-        var audioUrl = '';
-
-        if (proxy) {
-          audioUrl = await requestQwenTtsAudioUrl(
-            proxy,
-            { 'Content-Type': 'application/json' },
-            {
-              text: plain,
-              model: QWEN_TTS_MODEL,
-              voice: QWEN_TTS_VOICE,
-              language_type: 'Chinese',
-            }
-          );
-        } else {
-          try {
-            audioUrl = await requestQwenTtsAudioUrl(
-              getDashScopeDirectTtsUrl(),
-              {
-                'Content-Type': 'application/json',
-                Authorization: 'Bearer ' + key,
-              },
-              {
-                model: QWEN_TTS_MODEL,
-                input: {
-                  text: plain,
-                  voice: QWEN_TTS_VOICE,
-                  language_type: 'Chinese',
-                },
-              }
-            );
-          } catch (directErr) {
-            if (!isLikelyBrowserCorsOrNetwork(directErr)) {
-              throw directErr;
-            }
-            if (isLocalInsecureUrlBlockedBySecurePage(DASHSCOPE_LOCAL_PROXY_DEFAULT)) {
-              throw new Error(
-                'https 页面无法访问本机 ' +
-                  DASHSCOPE_LOCAL_PROXY_DEFAULT +
-                  '。请用 http:// 打开本地页面并启动 dashscope-tts-proxy.mjs。'
-              );
-            }
-            try {
-              audioUrl = await requestQwenTtsAudioUrl(
-                DASHSCOPE_LOCAL_PROXY_DEFAULT,
-                { 'Content-Type': 'application/json' },
-                {
-                  text: plain,
-                  model: QWEN_TTS_MODEL,
-                  voice: QWEN_TTS_VOICE,
-                  language_type: 'Chinese',
-                }
-              );
-              if (!qwenLocalProxyHintShown) {
-                qwenLocalProxyHintShown = true;
-                pushTtsMeta(
-                  '浏览器无法直连百炼（CORS），已自动走本机 ' +
-                    DASHSCOPE_LOCAL_PROXY_DEFAULT +
-                    '。请保持终端运行：export DASHSCOPE_API_KEY=你的Key && node scripts/dashscope-tts-proxy.mjs；并把该 URL 填进「百炼 TTS 代理」可省去一次失败重试。'
-                );
-              }
-            } catch (proxyErr) {
-              throw new Error(
-                '直连失败：' +
-                  (directErr && directErr.message ? directErr.message : String(directErr)) +
-                  ' | 本机代理也失败（是否已启动代理且已 export DASHSCOPE_API_KEY？）：' +
-                  (proxyErr && proxyErr.message ? proxyErr.message : String(proxyErr))
-              );
-            }
-          }
-        }
-
-        if (ac !== qwenTtsAbort || !audioUrl) return;
+        var bin = atob(obj.data);
+        var merged = new Uint8Array(bin.length);
+        for (var bi = 0; bi < bin.length; bi++) merged[bi] = bin.charCodeAt(bi) & 0xff;
+        var audioUrl = URL.createObjectURL(new Blob([merged], { type: 'audio/mpeg' }));
 
         var el = document.getElementById('npc-tts-audio');
         if (!el) {
           throw new Error('页面缺少音频元素 #npc-tts-audio');
         }
-        qwenTtsAudio = el;
+        doubaoTtsAudio = el;
         if (el.__npcBlobUrl) {
           try {
             URL.revokeObjectURL(el.__npcBlobUrl);
@@ -1669,7 +1278,7 @@
           if (p && p.catch) {
             p.catch(function (playErr) {
               pushTtsMeta(
-                '千问音频无法播放：' +
+                '豆包音频无法播放：' +
                   (playErr && playErr.message ? playErr.message : String(playErr)) +
                   '。可先点击页面内「发送」再试，或单独打开 NPC.html。'
               );
@@ -1677,24 +1286,11 @@
             });
           }
         };
-
-        try {
-          var ar = await fetch(audioUrl, { mode: 'cors', credentials: 'omit', signal: ac.signal });
-          if (!ar.ok) throw new Error('拉取音频 HTTP ' + ar.status);
-          var blob = await ar.blob();
-          playFromSrc(URL.createObjectURL(blob), true);
-        } catch (fetchErr) {
-          if (fetchErr && fetchErr.name === 'AbortError') return;
-          try {
-            playFromSrc(audioUrl, false);
-          } catch (e2) {
-            throw fetchErr || e2;
-          }
-        }
+        playFromSrc(audioUrl, true);
       } catch (err) {
         if (err && err.name === 'AbortError') return;
         pushTtsMeta(
-          '千问 TTS 失败，已改用本机朗读。提示：本页为 HTTP 同步合成（qwen3-tts-flash），与「实时语音合成 Qwen-TTS-Realtime」WebSocket 文档不是同一路径。排查：node scripts/dashscope-tts-test.mjs。详情：' +
+          '豆包 TTS 失败，已改用本机朗读。请检查 App ID / Access Token / app.token / voice_type。详情：' +
             (err && err.message ? err.message : String(err))
         );
         speakTextWebSpeech(text);
@@ -1705,12 +1301,8 @@
       if (!ttsEnabled || !text) return;
       stopAllTts();
       var be = ttsBackendEl && ttsBackendEl.value;
-      if (be === 'qwen') {
-        void speakTextQwenAsync(text);
-        return;
-      }
-      if (be === 'qwen-realtime') {
-        speakTextQwenRealtimeAsync(text);
+      if (be === 'doubao') {
+        void speakTextDoubaoAsync(text);
         return;
       }
       speakTextWebSpeech(text);
@@ -1726,17 +1318,23 @@
         if (apiModelIdEl) {
           localStorage.setItem(STORAGE_ARK_MODEL, (apiModelIdEl.value.trim() || ARK_DEFAULT_MODEL));
         }
-        if (dashscopeTokenEl) {
-          localStorage.setItem(STORAGE_DASHSCOPE_TOKEN, dashscopeTokenEl.value.trim());
+        if (doubaoAppIdEl) {
+          localStorage.setItem(STORAGE_DOUBAO_APP_ID, doubaoAppIdEl.value.trim());
         }
-        if (dashscopeProxyUrlEl) {
-          localStorage.setItem(STORAGE_DASHSCOPE_PROXY, dashscopeProxyUrlEl.value.trim());
+        if (doubaoAccessKeyEl) {
+          localStorage.setItem(STORAGE_DOUBAO_ACCESS_KEY, doubaoAccessKeyEl.value.trim());
         }
-        if (dashscopeRealtimeWsUrlEl) {
-          localStorage.setItem(STORAGE_DASHSCOPE_REALTIME_WS, dashscopeRealtimeWsUrlEl.value.trim());
+        if (doubaoResourceIdEl) {
+          localStorage.setItem(
+            STORAGE_DOUBAO_RESOURCE_ID,
+            doubaoResourceIdEl.value.trim() || DOUBAO_DEFAULT_APP_TOKEN
+          );
         }
-        if (dashscopeRegionEl) {
-          localStorage.setItem(STORAGE_DASHSCOPE_REGION, dashscopeRegionEl.value || 'cn');
+        if (doubaoSpeakerEl) {
+          localStorage.setItem(
+            STORAGE_DOUBAO_SPEAKER,
+            doubaoSpeakerEl.value.trim() || DOUBAO_DEFAULT_VOICE_TYPE
+          );
         }
         if (ttsBackendEl) {
           localStorage.setItem(STORAGE_TTS_BACKEND, ttsBackendEl.value || 'webspeech');
@@ -1753,16 +1351,23 @@
         const mid = localStorage.getItem(STORAGE_ARK_MODEL);
         if (mid && apiModelIdEl) apiModelIdEl.value = mid;
         else if (apiModelIdEl && !apiModelIdEl.value.trim()) apiModelIdEl.value = ARK_DEFAULT_MODEL;
-        const ds = localStorage.getItem(STORAGE_DASHSCOPE_TOKEN);
-        if (ds && dashscopeTokenEl) dashscopeTokenEl.value = ds;
-        const px = localStorage.getItem(STORAGE_DASHSCOPE_PROXY);
-        if (px && dashscopeProxyUrlEl) dashscopeProxyUrlEl.value = px;
-        const rtx = localStorage.getItem(STORAGE_DASHSCOPE_REALTIME_WS);
-        if (rtx && dashscopeRealtimeWsUrlEl) dashscopeRealtimeWsUrlEl.value = rtx;
-        const dsr = localStorage.getItem(STORAGE_DASHSCOPE_REGION);
-        if (dsr && dashscopeRegionEl) dashscopeRegionEl.value = dsr;
+        const dbAppId = localStorage.getItem(STORAGE_DOUBAO_APP_ID);
+        if (dbAppId && doubaoAppIdEl) doubaoAppIdEl.value = dbAppId;
+        const dbAk = localStorage.getItem(STORAGE_DOUBAO_ACCESS_KEY);
+        if (dbAk && doubaoAccessKeyEl) doubaoAccessKeyEl.value = dbAk;
+        const dbRid = localStorage.getItem(STORAGE_DOUBAO_RESOURCE_ID);
+        if (doubaoResourceIdEl) {
+          doubaoResourceIdEl.value = dbRid || DOUBAO_DEFAULT_APP_TOKEN;
+        }
+        const dbSpeaker = localStorage.getItem(STORAGE_DOUBAO_SPEAKER);
+        if (doubaoSpeakerEl) {
+          doubaoSpeakerEl.value = dbSpeaker || DOUBAO_DEFAULT_VOICE_TYPE;
+        }
         const tb = localStorage.getItem(STORAGE_TTS_BACKEND);
-        if (tb && ttsBackendEl) ttsBackendEl.value = tb;
+        if (tb && ttsBackendEl) {
+          if (tb === 'qwen' || tb === 'qwen-realtime') ttsBackendEl.value = 'doubao';
+          else ttsBackendEl.value = tb;
+        }
       } catch (e) {
         // ignore
       }
@@ -1786,22 +1391,17 @@
           });
         if (!lines.length) return;
         apiTokenEl.value = lines[0];
-        if (lines[1] && dashscopeTokenEl) {
-          dashscopeTokenEl.value = lines[1];
+        if (lines[1] && doubaoAccessKeyEl) {
+          doubaoAccessKeyEl.value = lines[1];
         }
-        if (lines[2] && dashscopeRegionEl) {
-          var reg = lines[2].toLowerCase();
-          if (reg === 'intl' || reg === 'sg' || reg === 'singapore') {
-            dashscopeRegionEl.value = 'intl';
-          } else {
-            dashscopeRegionEl.value = 'cn';
-          }
+        if (lines[2] && doubaoAppIdEl) {
+          doubaoAppIdEl.value = lines[2];
         }
-        if (lines[3] && dashscopeProxyUrlEl && /^https?:\/\//i.test(lines[3])) {
-          dashscopeProxyUrlEl.value = lines[3];
+        if (lines[3] && doubaoResourceIdEl) {
+          doubaoResourceIdEl.value = lines[3];
         }
-        if (lines[4] && dashscopeRealtimeWsUrlEl && /^wss?:\/\//i.test(lines[4])) {
-          dashscopeRealtimeWsUrlEl.value = lines[4];
+        if (lines[4] && doubaoSpeakerEl) {
+          doubaoSpeakerEl.value = lines[4];
         }
         persistArkConfig();
       } catch (e) {
@@ -1989,20 +1589,21 @@
       apiModelIdEl.addEventListener('change', persistArkConfig);
       apiModelIdEl.addEventListener('blur', persistArkConfig);
     }
-    if (dashscopeTokenEl) {
-      dashscopeTokenEl.addEventListener('change', persistArkConfig);
-      dashscopeTokenEl.addEventListener('blur', persistArkConfig);
+    if (doubaoAppIdEl) {
+      doubaoAppIdEl.addEventListener('change', persistArkConfig);
+      doubaoAppIdEl.addEventListener('blur', persistArkConfig);
     }
-    if (dashscopeProxyUrlEl) {
-      dashscopeProxyUrlEl.addEventListener('change', persistArkConfig);
-      dashscopeProxyUrlEl.addEventListener('blur', persistArkConfig);
+    if (doubaoAccessKeyEl) {
+      doubaoAccessKeyEl.addEventListener('change', persistArkConfig);
+      doubaoAccessKeyEl.addEventListener('blur', persistArkConfig);
     }
-    if (dashscopeRealtimeWsUrlEl) {
-      dashscopeRealtimeWsUrlEl.addEventListener('change', persistArkConfig);
-      dashscopeRealtimeWsUrlEl.addEventListener('blur', persistArkConfig);
+    if (doubaoResourceIdEl) {
+      doubaoResourceIdEl.addEventListener('change', persistArkConfig);
+      doubaoResourceIdEl.addEventListener('blur', persistArkConfig);
     }
-    if (dashscopeRegionEl) {
-      dashscopeRegionEl.addEventListener('change', persistArkConfig);
+    if (doubaoSpeakerEl) {
+      doubaoSpeakerEl.addEventListener('change', persistArkConfig);
+      doubaoSpeakerEl.addEventListener('blur', persistArkConfig);
     }
     if (ttsBackendEl) {
       ttsBackendEl.addEventListener('change', persistArkConfig);

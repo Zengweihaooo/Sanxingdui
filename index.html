@@ -641,6 +641,14 @@
       aria-label="关闭视频"
     >×</button>
     <video id="video-player" class="w-full max-h-[72vh] bg-black" controls playsinline preload="metadata"></video>
+    <video
+      id="video-player-mini"
+      class="hidden absolute left-3 bottom-3 w-[24%] min-w-[180px] max-w-[280px] rounded-md border border-white/25 bg-black/90 shadow-lg pointer-events-none"
+      style="transform: scaleX(-1); transform-origin: center;"
+      muted
+      playsinline
+      preload="metadata"
+    ></video>
   </div>
 </div>
 <!-- END: Video Modal -->
@@ -1315,15 +1323,49 @@
 (function () {
   var modal = document.getElementById('video-modal');
   var player = document.getElementById('video-player');
+  var miniPlayer = document.getElementById('video-player-mini');
   var closeBtn = document.getElementById('video-close');
-  if (!modal || !player || !closeBtn) return;
+  if (!modal || !player || !closeBtn || !miniPlayer) return;
 
-  var cards = Array.prototype.slice.call(
-    document.querySelectorAll('#timeline-board .timeline-node'),
-    0,
-    6
+  var allNodes = Array.prototype.slice.call(
+    document.querySelectorAll('#timeline-board .timeline-node')
   );
-  if (!cards.length) return;
+  if (!allNodes.length) return;
+
+  var storylineTitles = [
+    '夜宿考古地，<br/>疑影现盗踪',
+    '深夜察异动，<br/>队长急呼安保',
+    '现场遭破坏，<br/>挺身阻拦盗匪',
+    '厉声斥恶行，<br/>对峙盗墓团伙',
+    '赤手搏凶徒，<br/>护宝起冲突',
+    '铁铲灭引线，<br/>险阻炸药引爆',
+    '严控备用炸药，<br/>死战阻敌逃窜',
+    '坚守拖延待援，<br/>文物安然无恙',
+    '负伤简单处置，<br/>盗匪悉数落网'
+  ];
+  var videoFiles = [
+    './视频/01.mp4',
+    './视频/02.mp4',
+    './视频/03.mp4',
+    './视频/04.MP4',
+    './视频/05.mp4',
+    './视频/06.mp4',
+    './视频/07.mp4',
+    './视频/08.mp4',
+    './视频/09.mp4'
+  ];
+  var coverFiles = [
+    '图片/01.png',
+    '图片/02.png',
+    '图片/03.png',
+    '图片/04.png',
+    '图片/05.png',
+    '图片/06.png',
+    '图片/07.png',
+    '图片/08.png',
+    '图片/09.png'
+  ];
+  var videoCards = allNodes.slice(0, storylineTitles.length);
 
   function showModal() {
     modal.classList.remove('hidden');
@@ -1331,6 +1373,7 @@
 
   function hideModal() {
     modal.classList.add('hidden');
+    detachMiniSync();
     try {
       player.pause();
       player.currentTime = 0;
@@ -1339,6 +1382,15 @@
     } catch (e) {
       // ignore
     }
+    try {
+      miniPlayer.pause();
+      miniPlayer.currentTime = 0;
+      miniPlayer.removeAttribute('src');
+      miniPlayer.load();
+    } catch (e2) {
+      // ignore
+    }
+    miniPlayer.classList.add('hidden');
   }
 
   closeBtn.addEventListener('click', function (e) {
@@ -1354,11 +1406,42 @@
     if (e.key === 'Escape' && !modal.classList.contains('hidden')) hideModal();
   });
 
+  function applyStorylineContent() {
+    videoCards.forEach(function (node, idx) {
+      var img = node.querySelector('.node-image-container img');
+      if (img) {
+        img.src = coverFiles[idx];
+        img.alt = '剧情节点 ' + String(idx + 1);
+      }
+      var titleEl = node.querySelector('p');
+      if (titleEl) {
+        titleEl.innerHTML = storylineTitles[idx];
+      }
+    });
+  }
+
+  function appendCardTitleLine(cardIndex1Based, lineText) {
+    var node = allNodes[cardIndex1Based - 1];
+    if (!node || !lineText) return;
+    var titleEl = node.querySelector('p');
+    if (!titleEl) return;
+    var current = titleEl.innerHTML || '';
+    if (current.indexOf(lineText) !== -1) return;
+    titleEl.innerHTML = current + '<br/>' + lineText;
+  }
+
+  applyStorylineContent();
+  appendCardTitleLine(10, '数字模型');
+  appendCardTitleLine(11, 'VR博物馆');
+  appendCardTitleLine(17, 'NPC对话');
+  appendCardTitleLine(18, '构建VR场景');
+
   function playVideoForIndex(index0) {
-    if (index0 < 0 || index0 > 5) return;
-    var n = index0 + 1;
-    var primary = './视频/video' + n + '.mp4';
-    var fallback = './视频/video1.mp4';
+    if (index0 < 0 || index0 >= videoFiles.length) return;
+    var primary = videoFiles[index0];
+    var fallback = videoFiles[0];
+    var needMini = index0 === 5;
+    var miniSrc = './视频/八小.mov';
 
     var usedFallback = false;
     showModal();
@@ -1369,6 +1452,18 @@
 
     player.src = primary;
     player.load();
+    detachMiniSync();
+
+    miniPlayer.pause();
+    miniPlayer.currentTime = 0;
+    miniPlayer.removeAttribute('src');
+    if (needMini) {
+      miniPlayer.src = miniSrc;
+      miniPlayer.classList.remove('hidden');
+      miniPlayer.load();
+    } else {
+      miniPlayer.classList.add('hidden');
+    }
 
     player.onerror = function () {
       if (usedFallback) return;
@@ -1379,19 +1474,61 @@
       player.play().catch(function () {});
     };
 
+    if (needMini) {
+      miniPlayer.onerror = function () {
+        miniPlayer.classList.add('hidden');
+      };
+      player.addEventListener('play', syncPlay, { once: false });
+      player.addEventListener('pause', syncPause, { once: false });
+      player.addEventListener('seeking', syncSeek, { once: false });
+      player.addEventListener('timeupdate', syncDrift, { once: false });
+      player.addEventListener('ended', syncEnd, { once: false });
+      miniPlayer.play().catch(function () {});
+    } else {
+      detachMiniSync();
+    }
     player.play().catch(function () {});
   }
 
-  cards.forEach(function (node, idx) {
+  function syncPlay() {
+    if (!miniPlayer.classList.contains('hidden')) miniPlayer.play().catch(function () {});
+  }
+  function syncPause() {
+    if (!miniPlayer.classList.contains('hidden')) miniPlayer.pause();
+  }
+  function syncSeek() {
+    if (!miniPlayer.classList.contains('hidden')) miniPlayer.currentTime = player.currentTime;
+  }
+  function syncDrift() {
+    if (miniPlayer.classList.contains('hidden')) return;
+    if (Math.abs((miniPlayer.currentTime || 0) - (player.currentTime || 0)) > 0.35) {
+      miniPlayer.currentTime = player.currentTime;
+    }
+  }
+  function syncEnd() {
+    if (!miniPlayer.classList.contains('hidden')) {
+      miniPlayer.pause();
+      miniPlayer.currentTime = 0;
+    }
+  }
+  function detachMiniSync() {
+    player.removeEventListener('play', syncPlay);
+    player.removeEventListener('pause', syncPause);
+    player.removeEventListener('seeking', syncSeek);
+    player.removeEventListener('timeupdate', syncDrift);
+    player.removeEventListener('ended', syncEnd);
+  }
+
+  videoCards.forEach(function (node, idx) {
     node.addEventListener('click', function (e) {
       e.stopPropagation();
       playVideoForIndex(idx);
     });
   });
 
-  var seventh = document.querySelectorAll('#timeline-board .timeline-node')[6];
-  if (seventh) {
-    seventh.addEventListener('click', function (e) {
+  var modelNode = allNodes[9];
+  if (modelNode) {
+    modelNode.addEventListener('click', function (e) {
       e.stopPropagation();
       if (typeof window.sanxingduiOpenModelViewer === 'function') {
         window.sanxingduiOpenModelViewer();
@@ -1401,7 +1538,7 @@
     });
   }
 
-  var seventeenth = document.querySelectorAll('#timeline-board .timeline-node')[16];
+  var seventeenth = allNodes[16];
   if (seventeenth) {
     seventeenth.addEventListener('click', function (e) {
       e.stopPropagation();
@@ -1413,7 +1550,7 @@
     });
   }
 
-  var eighteenth = document.querySelectorAll('#timeline-board .timeline-node')[17];
+  var eighteenth = allNodes[17];
   if (eighteenth) {
     eighteenth.addEventListener('click', function (e) {
       e.stopPropagation();
@@ -1423,9 +1560,9 @@
     });
   }
 
-  var eighth = document.querySelectorAll('#timeline-board .timeline-node')[7];
-  if (eighth) {
-    eighth.addEventListener('click', function (e) {
+  var externalNode = allNodes[10];
+  if (externalNode) {
+    externalNode.addEventListener('click', function (e) {
       e.stopPropagation();
       var targetUrl = 'https://www.shenzhenmuseum.com/v/ljsxd/';
       var docEl = document.documentElement;
