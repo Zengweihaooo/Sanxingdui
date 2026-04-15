@@ -257,9 +257,43 @@
     footer .flex.items-center.gap-2:hover > :first-child {
       transform: scale(1.14);
     }
+
+    .lang-switch .btn-lang {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 6px 12px;
+      border-radius: 8px;
+      border: 1px solid rgba(94, 162, 217, 0.45);
+      background: rgba(28, 34, 41, 0.88);
+      color: #fff;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      cursor: pointer;
+    }
+    .lang-switch .btn-lang:hover {
+      border-color: #5ea2d9;
+      background: rgba(40, 50, 62, 0.95);
+    }
+    .lang-switch .btn-lang.btn-lang-active {
+      border-color: #5ea2d9;
+      background: rgba(94, 162, 217, 0.22);
+      color: #e8f2ff;
+    }
   </style>
 </head>
 <body class="min-h-screen text-sm select-none">
+<script>
+(function () {
+  try {
+    var s = localStorage.getItem('sanxingdui-locale');
+    window.sanxingduiLocale = (s === 'en' || s === 'zh') ? s : 'zh';
+  } catch (e) {
+    window.sanxingduiLocale = 'zh';
+  }
+})();
+</script>
 <div class="bg-stage" aria-hidden="true">
   <div class="bg-glow"></div>
   <div class="bg-grid"></div>
@@ -270,19 +304,25 @@
 </div>
 <!-- BEGIN: Header Section -->
 <header class="p-4 pb-3 fixed top-0 left-0 z-50 max-w-[520px] bg-[#07090d]/40 backdrop-blur-sm">
-<h1 class="text-3xl font-light mb-3 tracking-wide">三星堆遗址 · 调查与发掘脉络</h1>
+<div class="flex flex-wrap items-start justify-between gap-3 mb-3">
+<h1 id="i18n-main-title" class="text-3xl font-light tracking-wide leading-tight">三星堆遗址 · 调查与发掘脉络</h1>
+<div class="lang-switch flex gap-2 shrink-0">
+<button type="button" class="btn-lang btn-lang-active" id="lang-zh" aria-pressed="true" lang="zh-CN" title="中文">中</button>
+<button type="button" class="btn-lang" id="lang-en" aria-pressed="false" lang="en" title="English">EN</button>
+</div>
+</div>
 <div class="flex flex-col gap-3 text-xs tracking-wider text-textMuted font-semibold">
 <div class="flex items-center gap-3">
 <svg class="w-5 h-5 text-progressFill shrink-0" fill="none" stroke="currentColor" viewbox="0 0 24 24">
 <path d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
 </svg>
-<span>公开数据占比<br/>（全局统计）</span>
+<span id="i18n-stat-open">公开数据占比<br/>（全局统计）</span>
 </div>
 <div class="flex items-center gap-3">
 <svg class="w-5 h-5 text-progressFill shrink-0" fill="none" stroke="currentColor" viewbox="0 0 24 24">
 <path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
 </svg>
-<span>关注热度 · 话题占比<br/>（访客侧）</span>
+<span id="i18n-stat-heat">关注热度 · 话题占比<br/>（访客侧）</span>
 </div>
 </div>
 </header>
@@ -607,27 +647,27 @@
 <footer class="fixed bottom-0 w-full p-4 flex flex-wrap justify-center gap-6 bg-gradient-to-t from-black to-transparent z-20 text-xs text-textMuted tracking-wider font-semibold">
 <div class="flex items-center gap-2">
 <span class="w-5 h-5 border border-textMuted rounded flex items-center justify-center text-[10px] text-progressFill">△</span>
-<span>访客统计</span>
+<span id="i18n-footer-visitors">访客统计</span>
 </div>
 <div class="flex items-center gap-2">
 <span class="w-5 h-5 border border-textMuted rounded flex items-center justify-center text-[10px]">☐</span>
-<span>显示图例</span>
+<span id="i18n-footer-legend">显示图例</span>
 </div>
 <div class="flex items-center gap-2">
 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M8 9l4-4 4 4m0 6l-4 4-4-4" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
-<span>滚动</span>
+<span id="i18n-footer-scroll">滚动</span>
 </div>
 <div class="flex items-center gap-2">
 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
-<span>缩放</span>
+<span id="i18n-footer-zoom">缩放</span>
 </div>
 <div class="flex items-center gap-2">
 <span class="w-5 h-5 border border-textMuted rounded-full flex items-center justify-center text-[10px]">✕</span>
-<span>未选中节点</span>
+<span id="i18n-footer-unselected">未选中节点</span>
 </div>
 <div class="flex items-center gap-2">
 <span class="w-5 h-5 border border-textMuted rounded-full flex items-center justify-center text-[10px] text-progressFillRed">◯</span>
-<span>返回</span>
+<span id="i18n-footer-back">返回</span>
 </div>
 </footer>
 <!-- END: Footer Controls -->
@@ -639,6 +679,9 @@
       type="button"
       class="absolute top-2 right-2 w-9 h-9 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center text-xl leading-none z-10"
       aria-label="关闭视频"
+      id="i18n-video-close"
+      data-aria-zh="关闭视频"
+      data-aria-en="Close video"
     >×</button>
     <video id="video-player" class="w-full max-h-[72vh] bg-black" controls playsinline preload="metadata"></video>
     <video
@@ -658,7 +701,7 @@
   class="fixed inset-0 z-[70] hidden items-center justify-center bg-black/70 p-4"
 >
   <div class="w-full max-w-md bg-[#07090d]/95 border border-white/15 rounded-lg p-4 shadow-2xl">
-    <p class="text-sm text-textMuted leading-relaxed mb-3">
+    <p id="i18n-fs-msg" class="text-sm text-textMuted leading-relaxed mb-3">
       浏览器限制：需要用户操作才能进入全屏。
     </p>
     <button
@@ -666,7 +709,7 @@
       type="button"
       class="w-full rounded-md bg-[#07090d] border border-white/15 hover:bg-black/40 text-white py-2"
     >
-      点击进入全屏
+      <span id="i18n-fs-cta">点击进入全屏</span>
     </button>
   </div>
 </div>
@@ -681,6 +724,8 @@
     id="model-viewer-frame"
     class="absolute inset-0 w-full h-full border-0 bg-transparent"
     title="三维模型预览"
+    data-i18n-title-zh="三维模型预览"
+    data-i18n-title-en="3D model preview"
     allowfullscreen
   ></iframe>
 </div>
@@ -696,11 +741,16 @@
     type="button"
     class="absolute top-3 right-3 z-[92] w-10 h-10 rounded-full bg-black/55 hover:bg-black/75 border border-white/25 text-white text-xl leading-none flex items-center justify-center shadow-lg"
     aria-label="关闭 NPC 对话"
+    id="i18n-npc-close"
+    data-aria-zh="关闭 NPC 对话"
+    data-aria-en="Close NPC dialogue"
   >×</button>
   <iframe
     id="npc-overlay-frame"
     class="absolute inset-0 w-full h-full border-0 bg-transparent"
     title="三星堆 NPC 对话"
+    data-i18n-title-zh="三星堆 NPC 对话"
+    data-i18n-title-en="Sanxingdui NPC dialogue"
     allowfullscreen
     allow="autoplay *; microphone *; display-capture *"
   ></iframe>
@@ -717,6 +767,9 @@
     type="button"
     class="absolute top-3 right-3 z-[97] w-10 h-10 rounded-full bg-black/55 hover:bg-black/75 border border-white/25 text-white text-xl leading-none flex items-center justify-center shadow-lg"
     aria-label="关闭全景预览"
+    id="i18n-pano-close"
+    data-aria-zh="关闭全景预览"
+    data-aria-en="Close panorama"
   >×</button>
   <div id="panorama-viewer-a" class="absolute inset-0"></div>
   <div id="panorama-viewer-b" class="absolute inset-0 opacity-0 pointer-events-none"></div>
@@ -1332,7 +1385,7 @@
   );
   if (!allNodes.length) return;
 
-  var storylineTitles = [
+  var STORYLINE_TITLES_ZH = [
     '夜宿考古地，<br/>疑影现盗踪',
     '深夜察异动，<br/>队长急呼安保',
     '现场遭破坏，<br/>挺身阻拦盗匪',
@@ -1343,6 +1396,115 @@
     '坚守拖延待援，<br/>文物安然无恙',
     '负伤简单处置，<br/>盗匪悉数落网'
   ];
+  var STORYLINE_TITLES_EN = [
+    'Night at the dig,<br/>shadows hint at looters',
+    'Midnight unrest—<br/>security is called',
+    'The trench is breached—<br/>blocking the raid',
+    'Facing down the gang,<br/>voices against crime',
+    'Unarmed struggle,<br/>shielding the finds',
+    'Smothering the fuse,<br/>blast narrowly averted',
+    'Securing spare charges,<br/>holding the line',
+    'Buying time—<br/>the relics stay safe',
+    'Wounds dressed—<br/>every looter caught'
+  ];
+  function getStorylineTitles() {
+    return window.sanxingduiLocale === 'en' ? STORYLINE_TITLES_EN : STORYLINE_TITLES_ZH;
+  }
+
+  var COMPOSITE_CARD_HTML = {
+    zh: {
+      9: '海外拍卖与<br/>走私链追踪<br/>数字模型',
+      10: '玉璋与牙璋<br/>类型学比对<br/>VR博物馆',
+      16: '金器清洗与修复<br/>入藏著录<br/>NPC对话',
+      17: '三星堆博物馆<br/>常展与借展<br/>构建VR场景'
+    },
+    en: {
+      9: 'Overseas auctions &<br/>smuggling trail<br/>3D models',
+      10: 'Zhang and notched zhang<br/>Typological comparison<br/>VR museum',
+      16: 'Gold cleaning & conservation<br/>Accession & catalog<br/>NPC dialogue',
+      17: 'Sanxingdui Museum<br/>Permanent & touring<br/>Building VR scenes'
+    }
+  };
+
+  var SIMPLE_CARD_HTML = {
+    zh: {
+      11: '二号祭祀坑<br/>象牙与青铜器群',
+      12: '现场防护成功<br/>盗扰未得逞',
+      13: '残片被带离现场<br/>需追缴',
+      14: '防护出现缺口<br/>遗存风险升高',
+      15: '碳十四与<br/>土样测年支线',
+      18: '文物流向灰色市场<br/>追踪困难'
+    },
+    en: {
+      11: 'Sacrificial Pit 2<br/>Ivory and bronzes',
+      12: 'Protection held—<br/>looting foiled',
+      13: 'Fragments removed<br/>Recovery needed',
+      14: 'Security gap<br/>Higher site risk',
+      15: 'Radiocarbon &<br/>soil dating branch',
+      18: 'Gray-market trafficking<br/>Hard to trace'
+    }
+  };
+
+  function timelineLocalePack() {
+    return window.sanxingduiLocale === 'en' ? 'en' : 'zh';
+  }
+
+  function refreshCompositeCards() {
+    var pack = COMPOSITE_CARD_HTML[timelineLocalePack()];
+    [9, 10, 16, 17].forEach(function (idx) {
+      var node = allNodes[idx];
+      if (!node) return;
+      var titleEl = node.querySelector('p');
+      if (titleEl && pack[idx]) titleEl.innerHTML = pack[idx];
+    });
+  }
+
+  function refreshSimpleCaptions() {
+    var pack = SIMPLE_CARD_HTML[timelineLocalePack()];
+    [11, 12, 13, 14, 15, 18].forEach(function (idx) {
+      var node = allNodes[idx];
+      if (!node) return;
+      var titleEl = node.querySelector('p');
+      if (titleEl && pack[idx] != null) titleEl.innerHTML = pack[idx];
+    });
+  }
+
+  var IMG_ALT_BY_LOCALE = {
+    zh: {
+      9: '海外线索',
+      10: '玉璋',
+      11: '二号坑',
+      12: '联合考古',
+      13: '残片',
+      14: '防护缺口',
+      15: '土样',
+      16: '修复',
+      17: '博物馆',
+      18: '黑市'
+    },
+    en: {
+      9: 'Overseas leads',
+      10: 'Ritual zhang blade',
+      11: 'Sacrificial pit 2',
+      12: 'Joint archaeology',
+      13: 'Sherds',
+      14: 'Security gap',
+      15: 'Soil sample',
+      16: 'Conservation',
+      17: 'Museum',
+      18: 'Black market'
+    }
+  };
+
+  function refreshTimelineImgAlts() {
+    var pack = IMG_ALT_BY_LOCALE[timelineLocalePack()];
+    for (var idx = 9; idx <= 18; idx++) {
+      var node = allNodes[idx];
+      if (!node) continue;
+      var img = node.querySelector('.node-image-container img');
+      if (img && pack[idx]) img.alt = pack[idx];
+    }
+  }
   var videoFiles = [
     './视频/01.mp4',
     './视频/02.mp4',
@@ -1365,7 +1527,7 @@
     '图片/08.png',
     '图片/09.png'
   ];
-  var videoCards = allNodes.slice(0, storylineTitles.length);
+  var videoCards = allNodes.slice(0, STORYLINE_TITLES_ZH.length);
 
   function showModal() {
     modal.classList.remove('hidden');
@@ -1407,34 +1569,29 @@
   });
 
   function applyStorylineContent() {
+    var titles = getStorylineTitles();
     videoCards.forEach(function (node, idx) {
       var img = node.querySelector('.node-image-container img');
       if (img) {
         img.src = coverFiles[idx];
-        img.alt = '剧情节点 ' + String(idx + 1);
+        img.alt =
+          (window.sanxingduiLocale === 'en' ? 'Story beat ' : '剧情节点 ') + String(idx + 1);
       }
       var titleEl = node.querySelector('p');
       if (titleEl) {
-        titleEl.innerHTML = storylineTitles[idx];
+        titleEl.innerHTML = titles[idx];
       }
     });
   }
 
-  function appendCardTitleLine(cardIndex1Based, lineText) {
-    var node = allNodes[cardIndex1Based - 1];
-    if (!node || !lineText) return;
-    var titleEl = node.querySelector('p');
-    if (!titleEl) return;
-    var current = titleEl.innerHTML || '';
-    if (current.indexOf(lineText) !== -1) return;
-    titleEl.innerHTML = current + '<br/>' + lineText;
+  function refreshTimelineCardText() {
+    applyStorylineContent();
+    refreshCompositeCards();
+    refreshSimpleCaptions();
+    refreshTimelineImgAlts();
   }
 
-  applyStorylineContent();
-  appendCardTitleLine(10, '数字模型');
-  appendCardTitleLine(11, 'VR博物馆');
-  appendCardTitleLine(17, 'NPC对话');
-  appendCardTitleLine(18, '构建VR场景');
+  window.sanxingduiRefreshTimelineText = refreshTimelineCardText;
 
   function playVideoForIndex(index0) {
     if (index0 < 0 || index0 >= videoFiles.length) return;
@@ -1705,6 +1862,135 @@
       });
     });
   }
+})();
+</script>
+<script>
+(function () {
+  var KEY = 'sanxingdui-locale';
+  var UI = {
+    zh: {
+      pageTitle: '三星堆 · 遗址调查脉络',
+      mainTitle: '三星堆遗址 · 调查与发掘脉络',
+      statOpen: '公开数据占比<br/>（全局统计）',
+      statHeat: '关注热度 · 话题占比<br/>（访客侧）',
+      footerVisitors: '访客统计',
+      footerLegend: '显示图例',
+      footerScroll: '滚动',
+      footerZoom: '缩放',
+      footerUnselected: '未选中节点',
+      footerBack: '返回',
+      fsMsg: '浏览器限制：需要用户操作才能进入全屏。',
+      fsCta: '点击进入全屏'
+    },
+    en: {
+      pageTitle: 'Sanxingdui · Survey timeline',
+      mainTitle: 'Sanxingdui site · Survey & excavation timeline',
+      statOpen: 'Open data share<br/>(global totals)',
+      statHeat: 'Attention & topics<br/>(visitor view)',
+      footerVisitors: 'Visitor stats',
+      footerLegend: 'Show legend',
+      footerScroll: 'Scroll / pan',
+      footerZoom: 'Zoom',
+      footerUnselected: 'No node selected',
+      footerBack: 'Back',
+      fsMsg: 'Your browser requires a user action before entering fullscreen.',
+      fsCta: 'Enter fullscreen'
+    }
+  };
+
+  function pack() {
+    return window.sanxingduiLocale === 'en' ? UI.en : UI.zh;
+  }
+
+  function applyIndexLocale() {
+    var p = pack();
+    try {
+      localStorage.setItem(KEY, window.sanxingduiLocale);
+    } catch (e) {}
+    document.documentElement.lang = window.sanxingduiLocale === 'en' ? 'en' : 'zh-CN';
+    document.title = p.pageTitle;
+
+    var mt = document.getElementById('i18n-main-title');
+    if (mt) mt.textContent = p.mainTitle;
+
+    var so = document.getElementById('i18n-stat-open');
+    if (so) so.innerHTML = p.statOpen;
+    var sh = document.getElementById('i18n-stat-heat');
+    if (sh) sh.innerHTML = p.statHeat;
+
+    var fv = document.getElementById('i18n-footer-visitors');
+    if (fv) fv.textContent = p.footerVisitors;
+    var fl = document.getElementById('i18n-footer-legend');
+    if (fl) fl.textContent = p.footerLegend;
+    var fs = document.getElementById('i18n-footer-scroll');
+    if (fs) fs.textContent = p.footerScroll;
+    var fz = document.getElementById('i18n-footer-zoom');
+    if (fz) fz.textContent = p.footerZoom;
+    var fu = document.getElementById('i18n-footer-unselected');
+    if (fu) fu.textContent = p.footerUnselected;
+    var fb = document.getElementById('i18n-footer-back');
+    if (fb) fb.textContent = p.footerBack;
+
+    var fsm = document.getElementById('i18n-fs-msg');
+    if (fsm) fsm.textContent = p.fsMsg;
+    var fsc = document.getElementById('i18n-fs-cta');
+    if (fsc) fsc.textContent = p.fsCta;
+
+    var loc = window.sanxingduiLocale === 'en' ? 'en' : 'zh';
+    ['i18n-video-close', 'i18n-npc-close', 'i18n-pano-close'].forEach(function (bid) {
+      var b = document.getElementById(bid);
+      if (!b) return;
+      var a = b.getAttribute('data-aria-' + loc);
+      if (a) b.setAttribute('aria-label', a);
+    });
+
+    var mf = document.getElementById('model-viewer-frame');
+    if (mf) {
+      var tm = mf.getAttribute('data-i18n-title-' + loc);
+      if (tm) mf.setAttribute('title', tm);
+    }
+    var nf = document.getElementById('npc-overlay-frame');
+    if (nf) {
+      var tn = nf.getAttribute('data-i18n-title-' + loc);
+      if (tn) nf.setAttribute('title', tn);
+    }
+
+    var zhBtn = document.getElementById('lang-zh');
+    var enBtn = document.getElementById('lang-en');
+    if (zhBtn) {
+      zhBtn.classList.toggle('btn-lang-active', window.sanxingduiLocale === 'zh');
+      zhBtn.setAttribute('aria-pressed', window.sanxingduiLocale === 'zh' ? 'true' : 'false');
+    }
+    if (enBtn) {
+      enBtn.classList.toggle('btn-lang-active', window.sanxingduiLocale === 'en');
+      enBtn.setAttribute('aria-pressed', window.sanxingduiLocale === 'en' ? 'true' : 'false');
+    }
+
+    if (typeof window.sanxingduiRefreshTimelineText === 'function') {
+      window.sanxingduiRefreshTimelineText();
+    }
+  }
+
+  window.sanxingduiApplyIndexLocale = applyIndexLocale;
+
+  var zhB = document.getElementById('lang-zh');
+  var enB = document.getElementById('lang-en');
+  if (zhB) {
+    zhB.addEventListener('click', function () {
+      if (window.sanxingduiLocale === 'zh') return;
+      window.sanxingduiLocale = 'zh';
+      applyIndexLocale();
+    });
+  }
+  if (enB) {
+    enB.addEventListener('click', function () {
+      if (window.sanxingduiLocale === 'en') return;
+      window.sanxingduiLocale = 'en';
+      applyIndexLocale();
+    });
+  }
+
+  applyIndexLocale();
 })();
 </script>
 </body></html>

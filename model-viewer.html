@@ -263,6 +263,16 @@
     #mask-info.is-visible .mask-info__accent {
       transform: scaleX(1);
     }
+    .lang-switch {
+      display: flex;
+      gap: 8px;
+      pointer-events: auto;
+    }
+    .btn.btn-lang-active {
+      border-color: #5ea2d9;
+      background: rgba(94, 162, 217, 0.22);
+      color: #e8f2ff;
+    }
   </style>
   <script type="importmap">
   {
@@ -284,6 +294,10 @@
   <div id="error" role="alert"></div>
   <div id="ui">
     <button type="button" class="btn" id="model-viewer-back">← 返回脉络图</button>
+    <div class="lang-switch">
+      <button type="button" class="btn btn-lang-active" id="lang-zh" aria-pressed="true" lang="zh-CN" title="中文">中</button>
+      <button type="button" class="btn" id="lang-en" aria-pressed="false" lang="en" title="English">EN</button>
+    </div>
     <p id="hint">
       左键拖拽：旋转视角 · 右键拖拽：平移 · 滚轮：缩放<br/>
       <span style="opacity:0.85">光标移到模型上：总述 · 按 <kbd class="kbd-hint">1</kbd> 耳部 · 按 <kbd class="kbd-hint">2</kbd> 眼部</span><br/>
@@ -319,41 +333,142 @@
     const MODEL_DEFS = [
       {
         id: 'm04',
-        label: '模型 4',
+        labelZh: '模型 4',
+        labelEn: 'Model 4',
         fbx: new URL('./模型/04-梵犀设计/01.fbx', import.meta.url).href,
         textureDir: new URL('./模型/04-梵犀设计/texture/', import.meta.url).href
       },
       {
         id: 'm05',
-        label: '模型 5',
+        labelZh: '模型 5',
+        labelEn: 'Model 5',
         fbx: new URL('./模型/05-梵犀设计/05.fbx', import.meta.url).href,
         textureDir: new URL('./模型/05-梵犀设计/texture/', import.meta.url).href
       },
       {
         id: 'm06',
-        label: '模型 6',
+        labelZh: '模型 6',
+        labelEn: 'Model 6',
         fbx: new URL('./模型/06-梵犀设计/done.fbx', import.meta.url).href,
         textureDir: new URL('./模型/06-梵犀设计/texture/', import.meta.url).href
       },
       {
         id: 'm01',
-        label: '模型 1',
+        labelZh: '模型 1',
+        labelEn: 'Model 1',
         fbx: new URL('./模型/01-梵犀设计/01.fbx', import.meta.url).href,
         textureDir: new URL('./模型/01-梵犀设计/texture/', import.meta.url).href
       },
       {
         id: 'm02',
-        label: '模型 2',
+        labelZh: '模型 2',
+        labelEn: 'Model 2',
         fbx: new URL('./模型/02-梵犀设计/02.FBX', import.meta.url).href,
         textureDir: new URL('./模型/02-梵犀设计/texture/', import.meta.url).href
       },
       {
         id: 'm03',
-        label: '模型 3',
+        labelZh: '模型 3',
+        labelEn: 'Model 3',
         fbx: new URL('./模型/03-梵犀设计/01.fbx', import.meta.url).href,
         textureDir: new URL('./模型/03-梵犀设计/texture/', import.meta.url).href
       }
     ];
+
+    var LOCALE_KEY = 'sanxingdui-locale';
+    var LOCALE_KEY_LEGACY = 'sanxingdui-model-viewer-locale';
+    var locale = 'zh';
+    try {
+      var stored = localStorage.getItem(LOCALE_KEY);
+      if (stored !== 'en' && stored !== 'zh') {
+        stored = localStorage.getItem(LOCALE_KEY_LEGACY);
+      }
+      if (stored === 'en' || stored === 'zh') locale = stored;
+    } catch (e) {}
+
+    var UI_STRINGS = {
+      zh: {
+        pageTitle: '模型预览 · 三星堆',
+        loading: '正在加载 FBX 模型…',
+        back: '← 返回脉络图',
+        hintHtml:
+          '左键拖拽：旋转视角 · 右键拖拽：平移 · 滚轮：缩放<br/>' +
+          '<span style="opacity:0.85">光标移到模型上：总述 · 按 <kbd class="kbd-hint">1</kbd> 耳部 · 按 <kbd class="kbd-hint">2</kbd> 眼部</span><br/>' +
+          '<span style="opacity:0.75;font-size:11px">模型默认绕竖轴缓转，拖拽时暂停</span>',
+        errorLoad:
+          '模型加载失败。请用本地 HTTP 服务打开站点（勿直接用 file://），并确认 04/05/06 模型与对应 texture 目录存在。'
+      },
+      en: {
+        pageTitle: 'Model Viewer · Sanxingdui',
+        loading: 'Loading FBX model…',
+        back: '← Back to context map',
+        hintHtml:
+          'Left drag: rotate · Right drag: pan · Wheel: zoom<br/>' +
+          '<span style="opacity:0.85">Hover model: overview · Press <kbd class="kbd-hint">1</kbd> ears · Press <kbd class="kbd-hint">2</kbd> eyes</span><br/>' +
+          '<span style="opacity:0.75;font-size:11px">Model spins slowly on the vertical axis; dragging pauses rotation</span>',
+        errorLoad:
+          'Failed to load models. Open the site over local HTTP (not file://) and ensure models 04/05/06 and their texture folders exist.'
+      }
+    };
+
+    var INFO_BY_LOCALE = {
+      zh: {
+        full: {
+          eyebrow: '文物档案',
+          title: '三星堆 · 青铜面具',
+          html:
+            '<p>此类面具出土于四川广汉三星堆遗址祭祀坑，属商代晚期青铜重器，面部夸张、双目纵突，兼具人形与神性，一般被认为是古蜀祭祀中与神灵沟通的法器或崇拜偶像。</p>' +
+            '<p>合金铸造与套铸工艺精湛，表面可见绿锈与局部贴金痕迹；与中原同期青铜器在造型系统上差异显著，是研究古蜀文明宗教与权力表达的重要实物。</p>'
+        },
+        ear: {
+          eyebrow: '局部细读 · 耳部',
+          title: '夸张耳形与冠饰衔接',
+          html:
+            '<p>耳部体量硕大、外展明显，与面部形成强烈轮廓对比，既强化「非人」视觉张力，也承担与额际、冠饰构件衔接的结构作用，常见于祭祀语境中对听觉与通神能力的象征化表达。</p>' +
+            '<p>铸造上多为分铸或套铸后再与面部结合，转折处可见打磨与补铸痕迹；锈蚀与贴金残存往往沿耳廓走向分布，可作观察浇铸顺序与后期修饰的线索。</p>'
+        },
+        eye: {
+          eyebrow: '局部细读 · 眼部',
+          title: '纵目与眼眶的仪式语言',
+          html:
+            '<p>眼部是最具辨识度的特征之一：柱状前伸的「纵目」与宽深的眼眶共同构成强烈的凝视感，在宗教图像逻辑中多被解读为超越常人的视域与神性注视。</p>' +
+            '<p>眼周与眉弓过渡处常形成锐利棱线，配合镶嵌或彩绘残迹（若存），可还原当年礼仪展示中的光影效果；数字化模型便于从多角度观察凸起尺度与对称关系。</p>'
+        }
+      },
+      en: {
+        full: {
+          eyebrow: 'Artifact file',
+          title: 'Sanxingdui · Bronze mask',
+          html:
+            '<p>Masks of this type come from the sacrificial pits at the Sanxingdui site in Guanghan, Sichuan. Dating to the late Shang, they are monumental bronzes with exaggerated faces and protruding eyes, both human and divine in character, often interpreted as ritual instruments or cult images for communicating with spirits in ancient Shu.</p>' +
+            '<p>Alloy casting and core assembly are highly skilled; surfaces show green patina and traces of gilding. Their formal language differs sharply from contemporary Central Plains bronzes, making them key evidence for religion and power in Shu civilization.</p>'
+        },
+        ear: {
+          eyebrow: 'Close read · Ears',
+          title: 'Exaggerated ears and headdress join',
+          html:
+            '<p>The ears are large and flare outward, contrasting strongly with the face. They heighten an “other-than-human” presence and structurally link the face to the forehead and headdress—often read in ritual contexts as symbols of hearing and access to the divine.</p>' +
+            '<p>They were usually cast separately or in sections and joined to the face; finishing and patch marks appear at transitions. Patina and surviving gilding often follow the ear’s curve, offering clues to casting order and later surface work.</p>'
+        },
+        eye: {
+          eyebrow: 'Close read · Eyes',
+          title: 'Protruding eyes and the language of ritual gaze',
+          html:
+            '<p>The eyes are among the most distinctive traits: column-like “protruding eyes” and deep sockets create an intense stare, often interpreted in religious imagery as superhuman vision and a divine gaze.</p>' +
+            '<p>Sharp edges between lids and brow ridge, together with any inlay or pigment traces, help reconstruct how light played across the mask in ceremony; the digital model makes it easier to study projection and symmetry from every angle.</p>'
+        }
+      }
+    };
+
+    function tUi(key) {
+      var pack = UI_STRINGS[locale] || UI_STRINGS.zh;
+      return pack[key] != null ? pack[key] : UI_STRINGS.zh[key];
+    }
+
+    function getModelDisplayLabel(def) {
+      if (!def) return '';
+      return locale === 'en' ? def.labelEn : def.labelZh;
+    }
 
     function remapTextureUrl(url, textureDir) {
       var u = String(url).replace(/\\/g, '/');
@@ -385,6 +500,35 @@
     const embedded = window.self !== window.top;
 
     var backBtn = document.getElementById('model-viewer-back');
+    var langZhBtn = document.getElementById('lang-zh');
+    var langEnBtn = document.getElementById('lang-en');
+    var hintEl = document.getElementById('hint');
+
+    function applyLocale() {
+      try {
+        localStorage.setItem(LOCALE_KEY, locale);
+        localStorage.setItem(LOCALE_KEY_LEGACY, locale);
+      } catch (e) {}
+      document.documentElement.lang = locale === 'en' ? 'en' : 'zh-CN';
+      document.title = tUi('pageTitle');
+      if (loadingEl) loadingEl.textContent = tUi('loading');
+      if (backBtn) backBtn.textContent = tUi('back');
+      if (hintEl) hintEl.innerHTML = tUi('hintHtml');
+      if (langZhBtn) {
+        langZhBtn.classList.toggle('btn-lang-active', locale === 'zh');
+        langZhBtn.setAttribute('aria-pressed', locale === 'zh' ? 'true' : 'false');
+      }
+      if (langEnBtn) {
+        langEnBtn.classList.toggle('btn-lang-active', locale === 'en');
+        langEnBtn.setAttribute('aria-pressed', locale === 'en' ? 'true' : 'false');
+      }
+      applyInfoMode(infoMode, false);
+      updateSideChips();
+      if (errorEl && errorEl.classList.contains('show')) {
+        errorEl.textContent = tUi('errorLoad');
+      }
+    }
+
     if (backBtn) {
       backBtn.addEventListener('click', function () {
         if (embedded) {
@@ -394,6 +538,20 @@
         } else {
           window.location.href = 'index.html';
         }
+      });
+    }
+    if (langZhBtn) {
+      langZhBtn.addEventListener('click', function () {
+        if (locale === 'zh') return;
+        locale = 'zh';
+        applyLocale();
+      });
+    }
+    if (langEnBtn) {
+      langEnBtn.addEventListener('click', function () {
+        if (locale === 'en') return;
+        locale = 'en';
+        applyLocale();
       });
     }
 
@@ -487,32 +645,9 @@
       return modelItems[selectedModelIdx] || null;
     }
 
-    var INFO_COPY = {
-      full: {
-        eyebrow: '文物档案',
-        title: '三星堆 · 青铜面具',
-        html:
-          '<p>此类面具出土于四川广汉三星堆遗址祭祀坑，属商代晚期青铜重器，面部夸张、双目纵突，兼具人形与神性，一般被认为是古蜀祭祀中与神灵沟通的法器或崇拜偶像。</p>' +
-          '<p>合金铸造与套铸工艺精湛，表面可见绿锈与局部贴金痕迹；与中原同期青铜器在造型系统上差异显著，是研究古蜀文明宗教与权力表达的重要实物。</p>'
-      },
-      ear: {
-        eyebrow: '局部细读 · 耳部',
-        title: '夸张耳形与冠饰衔接',
-        html:
-          '<p>耳部体量硕大、外展明显，与面部形成强烈轮廓对比，既强化「非人」视觉张力，也承担与额际、冠饰构件衔接的结构作用，常见于祭祀语境中对听觉与通神能力的象征化表达。</p>' +
-          '<p>铸造上多为分铸或套铸后再与面部结合，转折处可见打磨与补铸痕迹；锈蚀与贴金残存往往沿耳廓走向分布，可作观察浇铸顺序与后期修饰的线索。</p>'
-      },
-      eye: {
-        eyebrow: '局部细读 · 眼部',
-        title: '纵目与眼眶的仪式语言',
-        html:
-          '<p>眼部是最具辨识度的特征之一：柱状前伸的「纵目」与宽深的眼眶共同构成强烈的凝视感，在宗教图像逻辑中多被解读为超越常人的视域与神性注视。</p>' +
-          '<p>眼周与眉弓过渡处常形成锐利棱线，配合镶嵌或彩绘残迹（若存），可还原当年礼仪展示中的光影效果；数字化模型便于从多角度观察凸起尺度与对称关系。</p>'
-      }
-    };
-
     function applyInfoMode(mode, animated) {
-      var data = INFO_COPY[mode] || INFO_COPY.full;
+      var pack = INFO_BY_LOCALE[locale] || INFO_BY_LOCALE.zh;
+      var data = pack[mode] || pack.full;
       function writeDom() {
         if (maskEyebrowEl) maskEyebrowEl.textContent = data.eyebrow;
         if (maskTitleEl) maskTitleEl.textContent = data.title;
@@ -558,7 +693,7 @@
       }, 200);
     }
 
-    applyInfoMode('full', false);
+    applyLocale();
 
     window.addEventListener('keydown', function (e) {
       var tag = e.target && e.target.tagName;
@@ -688,7 +823,7 @@
             scene.add(holder);
             resolve({
               id: def.id,
-              label: def.label,
+              modelDef: def,
               holder: holder,
               root: object,
               userRotX: 0,
@@ -707,13 +842,13 @@
       var leftItem = modelItems[selectedModelIdx - 1] || null;
       var rightItem = modelItems[selectedModelIdx + 1] || null;
       if (leftItem) {
-        sideLeftEl.textContent = leftItem.label;
+        sideLeftEl.textContent = getModelDisplayLabel(leftItem.modelDef);
         sideLeftEl.classList.remove('hidden');
       } else {
         sideLeftEl.classList.add('hidden');
       }
       if (rightItem) {
-        sideRightEl.textContent = rightItem.label;
+        sideRightEl.textContent = getModelDisplayLabel(rightItem.modelDef);
         sideRightEl.classList.remove('hidden');
       } else {
         sideRightEl.classList.add('hidden');
@@ -821,9 +956,7 @@
       })
       .catch(function (err) {
         console.error(err);
-        showError(
-          '模型加载失败。请用本地 HTTP 服务打开站点（勿直接用 file://），并确认 04/05/06 模型与对应 texture 目录存在。'
-        );
+        showError(tUi('errorLoad'));
       });
 
     function onResize() {

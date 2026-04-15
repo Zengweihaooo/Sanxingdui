@@ -532,6 +532,30 @@
     html.npc-embedded .viewer-pane {
       background: transparent;
     }
+
+    .lang-switch .btn-lang {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 5px 10px;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      background: rgba(16, 22, 30, 0.85);
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      cursor: pointer;
+    }
+    .lang-switch .btn-lang:hover {
+      border-color: var(--line-strong);
+      color: #d7e9ff;
+    }
+    .lang-switch .btn-lang.btn-lang-active {
+      border-color: var(--line-strong);
+      background: rgba(94, 162, 217, 0.18);
+      color: #eaf3ff;
+    }
   </style>
   <script type="importmap">
   {
@@ -543,15 +567,31 @@
   </script>
 </head>
 <body>
+<script>
+(function () {
+  try {
+    var s = localStorage.getItem('sanxingdui-locale');
+    window.sanxingduiLocale = (s === 'en' || s === 'zh') ? s : 'zh';
+  } catch (e) {
+    window.sanxingduiLocale = 'zh';
+  }
+})();
+</script>
   <main class="app">
-    <section class="chat-pane" aria-label="三星堆 NPC 对话">
+    <section class="chat-pane" id="chat-pane-section" aria-label="三星堆 NPC 对话">
       <div class="chat-desk-top">
         <header class="chat-header">
           <div class="title-wrap">
-            <h1>三星堆 NPC 对话台</h1>
+            <h1 id="i18n-npc-h1">三星堆 NPC 对话台</h1>
             <p id="chat-subtitle">完整对话台 · 按 <kbd style="font-size:10px;padding:1px 5px;border:1px solid rgba(94,162,217,0.4);border-radius:4px;">/</kbd> 切换沉浸对话（仅底部输入 + 全屏模型）</p>
           </div>
-          <button id="clear-history" class="ghost-btn" type="button">清空记录</button>
+          <div class="chat-header-actions" style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+            <div class="lang-switch" style="display:flex;gap:6px;">
+              <button type="button" class="btn-lang btn-lang-active" id="lang-zh" aria-pressed="true" lang="zh-CN" title="中文">中</button>
+              <button type="button" class="btn-lang" id="lang-en" aria-pressed="false" lang="en" title="English">EN</button>
+            </div>
+            <button id="clear-history" class="ghost-btn" type="button">清空记录</button>
+          </div>
         </header>
 
         <div id="messages" class="messages"></div>
@@ -566,10 +606,10 @@
         <div class="helper">
           <span id="voice-status">语音状态：待机</span>
           <span style="display:flex;flex-wrap:wrap;align-items:center;gap:6px;justify-content:flex-end;">
-            <span>对话：方舟流式 · 朗读：</span>
+            <span id="i18n-tts-row-label">对话：方舟流式 · 朗读：</span>
             <select id="tts-backend" title="选择回复朗读方式" aria-label="朗读引擎">
-              <option value="webspeech">本机 Web Speech</option>
-              <option value="doubao">豆包 TTS（HTTP V1 非流式）</option>
+              <option value="webspeech" id="opt-tts-webspeech">本机 Web Speech</option>
+              <option value="doubao" id="opt-tts-doubao">豆包 TTS（HTTP V1 非流式）</option>
             </select>
             <button id="tts-toggle" type="button" class="ghost-btn" style="padding:2px 8px;font-size:11px;">语音回复：开</button>
           </span>
@@ -581,22 +621,22 @@
       <div class="api-key-panel" id="api-key-panel" role="region" aria-label="API 与语音密钥">
         <div class="api-key-panel-inner">
           <div class="api-config">
-            <label>方舟 API Key（Bearer）
+            <label><span id="i18n-lbl-token">方舟 API Key（Bearer）</span>
               <input type="password" id="apiToken" name="apiToken" autocomplete="off" placeholder="粘贴控制台 API Key" />
             </label>
-            <label>模型 ID（勿填 ep-）
+            <label><span id="i18n-lbl-model">模型 ID（勿填 ep-）</span>
               <input type="text" id="apiModelId" name="apiModelId" spellcheck="false" placeholder="doubao-seed-2-0-lite-260215" />
             </label>
-            <label class="api-config-full-row">豆包 App ID（app.appid）
+            <label class="api-config-full-row"><span id="i18n-lbl-db-app">豆包 App ID（app.appid）</span>
               <input type="text" id="doubaoAppId" name="doubaoAppId" spellcheck="false" placeholder="控制台中的 APP ID" />
             </label>
-            <label class="api-config-full-row">豆包 Access Token（Authorization: Bearer;token）
+            <label class="api-config-full-row"><span id="i18n-lbl-db-ak">豆包 Access Token（Authorization: Bearer;token）</span>
               <input type="password" id="doubaoAccessKey" name="doubaoAccessKey" autocomplete="off" placeholder="控制台 Token；勿提交仓库" />
             </label>
-            <label class="api-config-full-row">豆包 app.token（请求体内 fake token，非空即可）
+            <label class="api-config-full-row"><span id="i18n-lbl-db-res">豆包 app.token（请求体内 fake token，非空即可）</span>
               <input type="text" id="doubaoResourceId" name="doubaoResourceId" spellcheck="false" placeholder="fake_token" />
             </label>
-            <label class="api-config-full-row">豆包 voice_type（音色）
+            <label class="api-config-full-row"><span id="i18n-lbl-db-voice">豆包 voice_type（音色）</span>
               <input type="text" id="doubaoSpeaker" name="doubaoSpeaker" spellcheck="false" placeholder="zh_male_M392_conversation_wvae_bigtts" />
             </label>
           </div>
@@ -612,10 +652,10 @@
     <section class="viewer-pane">
       <canvas id="npc-canvas"></canvas>
       <div id="viewer-reply-bubble" class="viewer-reply-bubble" hidden aria-live="polite">
-        <span class="latest-label">最新回复</span>
+        <span class="latest-label" id="i18n-latest-label">最新回复</span>
         <div class="viewer-reply-body"></div>
       </div>
-      <div class="viewer-tag">模型 2（FBX + 纹理）</div>
+      <div class="viewer-tag" id="i18n-viewer-tag">模型 2（FBX + 纹理）</div>
     </section>
   </main>
   <!-- 豆包 TTS 合成音频播放元素；playsinline 利于 iOS；嵌入 iframe 时需配合父页 allow=autoplay -->
@@ -641,8 +681,174 @@
     const ARK_API_URL = 'https://ark.cn-beijing.volces.com/api/v3/chat/completions';
     const ARK_DEFAULT_MODEL = 'doubao-seed-2-0-lite-260215';
     /** 每次请求随用户问题一并发给 API（system 角色，与用户原文分离，效果等同「提示词 + 你的输入」） */
-    const NPC_SYSTEM_PROMPT =
+    const NPC_SYSTEM_PROMPT_ZH =
       '你现在在扮演三星堆的大祭司，我是一个科普游戏的玩家，请你以科普的形式回答我的问题，回复大概40字左右，根据具体的问题而定可以调整长短，要涵盖知识点和文化，有情感一点，可以用各种语气词';
+    const NPC_SYSTEM_PROMPT_EN =
+      'You are the high priest of Sanxingdui. I am a player in a popular-science game. Answer in a clear, educational tone, about 40 words (adjust as needed), with cultural context and a warm emotional touch; you may use light interjections.';
+
+    function getNpcSystemPrompt() {
+      return window.sanxingduiLocale === 'en' ? NPC_SYSTEM_PROMPT_EN : NPC_SYSTEM_PROMPT_ZH;
+    }
+
+    const LOCALE_KEY = 'sanxingdui-locale';
+    const NPC_I18N = {
+      zh: {
+        pageTitle: 'NPC 对话台 · 三星堆',
+        chatAria: '三星堆 NPC 对话',
+        h1: '三星堆 NPC 对话台',
+        subtitleDesk: '完整对话台 · 按 {kbd} 进入沉浸模式（全屏模型 + 底部居中输入）',
+        subtitleCinema: '沉浸模式 · 回复气泡锚在预览区右上 · 按 {kbd} 恢复完整对话台',
+        clearHistory: '清空记录',
+        inputPlaceholder: '输入你的问题（Enter 发送，Shift+Enter 换行）',
+        voiceBtnTitle: '语音输入',
+        send: '发送',
+        voiceIdle: '语音状态：待机',
+        voiceRecording: '语音状态：录音中...',
+        voiceError: '语音状态：异常，请重试',
+        voiceUnsupported: '语音状态：当前浏览器不支持',
+        ttsRowLabel: '对话：方舟流式 · 朗读：',
+        ttsSelectTitle: '选择回复朗读方式',
+        ttsSelectAria: '朗读引擎',
+        optWebspeech: '本机 Web Speech',
+        optDoubao: '豆包 TTS（HTTP V1 非流式）',
+        ttsOn: '语音回复：开',
+        ttsOff: '语音回复：关',
+        apiPanelAria: 'API 与语音密钥',
+        lblToken: '方舟 API Key（Bearer）',
+        lblModel: '模型 ID（勿填 ep-）',
+        lblDbApp: '豆包 App ID（app.appid）',
+        lblDbAk: '豆包 Access Token（Authorization: Bearer;token）',
+        lblDbRes: '豆包 app.token（请求体内 fake token，非空即可）',
+        lblDbVoice: '豆包 voice_type（音色）',
+        phToken: '粘贴控制台 API Key',
+        phModel: 'doubao-seed-2-0-lite-260215',
+        phDbApp: '控制台中的 APP ID',
+        phDbAk: '控制台 Token；勿提交仓库',
+        phDbRes: 'fake_token',
+        phDbVoice: 'zh_male_M392_conversation_wvae_bigtts',
+        apikeySaveHint:
+          'apikey.txt：第 1 行方舟 Key、第 2 行豆包 Access Token、第 3 行豆包 App ID、第 4 行 app.token(fake token, 非空即可)、第 5 行 voice_type；以 # 开头的行为注释',
+        saveBtn: '保存',
+        savedHint: '已保存到本机浏览器',
+        dockKeys: '密钥',
+        latestLabel: '最新回复',
+        viewerTag: '模型 2（FBX + 纹理）',
+        welcome:
+          '你好，我是三星堆展厅 NPC。你可以问我文物背景、工艺或时代脉络。',
+        bubbleEmpty: '暂无 NPC 回复，发送一条消息后此处显示最新回复。',
+        errNoApiKey: '未填写 API Key',
+        errStreamUnsupported: '当前环境不支持流式响应读取',
+        metaNeedApiKey:
+          '请先在下方填写方舟 API Key（与 ark_quickstart_package 中 curl 的 Bearer 一致），保存后会记在本地浏览器。',
+        emptyReply: '（未返回有效正文）',
+        metaArkPrefix: '方舟 API：',
+        fallbackReply:
+          '【离线占位】已收到：{q}\n请检查 API Key、模型 ID 或网络；若浏览器拦截跨域，请用本地静态服务打开本页或配置代理。',
+        ttsNoWebspeech: '当前浏览器不支持 Web Speech 朗读。',
+        ttsFailEmbedded:
+          '嵌入页内本机朗读常被浏览器限制。请在「朗读」中选「豆包 TTS」，或新标签单独打开 NPC.html。',
+        ttsFailGeneral:
+          '本机语音多次重试仍失败。可试：换 Safari/Chrome、系统设置 → 辅助功能 → 「朗读内容」、或改用「豆包 TTS」。',
+        ttsNotAllowed:
+          '朗读被浏览器拦截（not-allowed）。请先在本页内点击输入区或「发送」再试，或改用「豆包 TTS」。',
+        ttsFailCode: '本机语音朗读失败（{code}）。',
+        ttsDoubaoMissing: '已选「豆包 TTS」但缺少 App ID 或 Access Token，请在右下角密钥面板补全。',
+        errDoubaoNotJson: '豆包返回非 JSON：',
+        errDoubaoEmpty: '豆包返回为空',
+        errDoubaoCode: '豆包返回错误码 ',
+        errDoubaoNoData: '豆包未返回音频 data 字段',
+        errNoAudioEl: '页面缺少音频元素 #npc-tts-audio',
+        ttsDoubaoPlayFail: '豆包音频无法播放：',
+        ttsDoubaoPlayHint: '。可先点击页面内「发送」再试，或单独打开 NPC.html。',
+        ttsDoubaoFallback:
+          '豆包 TTS 失败，已改用本机朗读。请检查 App ID / Access Token / app.token / voice_type。详情：',
+        metaVoiceInputUnsupported: '当前浏览器不支持 Web Speech API，语音输入不可用。',
+        metaModelLoadFail: '模型加载失败，请确认 模型/02-梵犀设计/02.FBX 与 texture 目录存在。'
+      },
+      en: {
+        pageTitle: 'NPC Console · Sanxingdui',
+        chatAria: 'Sanxingdui NPC chat',
+        h1: 'Sanxingdui NPC console',
+        subtitleDesk: 'Full console · Press {kbd} for immersive mode (full-screen model + bottom input)',
+        subtitleCinema: 'Immersive mode · Reply bubble top-right of preview · Press {kbd} to restore full console',
+        clearHistory: 'Clear history',
+        inputPlaceholder: 'Type a question (Enter to send, Shift+Enter for newline)',
+        voiceBtnTitle: 'Voice input',
+        send: 'Send',
+        voiceIdle: 'Voice: idle',
+        voiceRecording: 'Voice: recording…',
+        voiceError: 'Voice: error, try again',
+        voiceUnsupported: 'Voice: not supported in this browser',
+        ttsRowLabel: 'Chat: Ark stream · Read aloud:',
+        ttsSelectTitle: 'Choose how replies are read aloud',
+        ttsSelectAria: 'TTS engine',
+        optWebspeech: 'Local Web Speech',
+        optDoubao: 'Doubao TTS (HTTP V1, non-streaming)',
+        ttsOn: 'Spoken replies: on',
+        ttsOff: 'Spoken replies: off',
+        apiPanelAria: 'API & voice keys',
+        lblToken: 'Ark API Key (Bearer)',
+        lblModel: 'Model ID (do not use ep- prefix)',
+        lblDbApp: 'Doubao App ID (app.appid)',
+        lblDbAk: 'Doubao Access Token (Authorization: Bearer;token)',
+        lblDbRes: 'Doubao app.token (body fake token, any non-empty)',
+        lblDbVoice: 'Doubao voice_type',
+        phToken: 'Paste API Key from console',
+        phModel: 'doubao-seed-2-0-lite-260215',
+        phDbApp: 'APP ID from console',
+        phDbAk: 'Console token; do not commit to repo',
+        phDbRes: 'fake_token',
+        phDbVoice: 'zh_male_M392_conversation_wvae_bigtts',
+        apikeySaveHint:
+          'apikey.txt: line 1 Ark key, 2 Doubao Access Token, 3 Doubao App ID, 4 app.token (fake, non-empty), 5 voice_type; lines starting with # are comments',
+        saveBtn: 'Save',
+        savedHint: 'Saved in this browser',
+        dockKeys: 'Keys',
+        latestLabel: 'Latest reply',
+        viewerTag: 'Model 2 (FBX + textures)',
+        welcome:
+          'Hello, I am the Sanxingdui gallery NPC. Ask me about artifacts, craft, or historical context.',
+        bubbleEmpty: 'No NPC reply yet—send a message to see the latest reply here.',
+        errNoApiKey: 'API Key is required',
+        errStreamUnsupported: 'Streaming response is not supported in this environment',
+        metaNeedApiKey:
+          'Enter your Ark API Key below (same Bearer as ark_quickstart_package curl), then save; it is stored locally in this browser.',
+        emptyReply: '(No valid reply body)',
+        metaArkPrefix: 'Ark API: ',
+        fallbackReply:
+          '[Offline] Received: {q}\nCheck API Key, model ID, or network; if the browser blocks CORS, open this page via a local static server or use a proxy.',
+        ttsNoWebspeech: 'This browser does not support Web Speech for read-aloud.',
+        ttsFailEmbedded:
+          'Embedded pages often block local TTS. Choose “Doubao TTS” under read-aloud, or open NPC.html in a new tab.',
+        ttsFailGeneral:
+          'Local speech still failed after retries. Try Safari/Chrome, system Accessibility → Spoken Content, or switch to “Doubao TTS”.',
+        ttsNotAllowed:
+          'Read-aloud blocked (not-allowed). Click the input or “Send” on this page first, or use “Doubao TTS”.',
+        ttsFailCode: 'Local speech failed ({code}).',
+        ttsDoubaoMissing: 'Doubao TTS is selected but App ID or Access Token is missing. Fill them in the keys panel.',
+        errDoubaoNotJson: 'Doubao returned non-JSON: ',
+        errDoubaoEmpty: 'Doubao returned empty response',
+        errDoubaoCode: 'Doubao error code ',
+        errDoubaoNoData: 'Doubao response missing audio data field',
+        errNoAudioEl: 'Page is missing audio element #npc-tts-audio',
+        ttsDoubaoPlayFail: 'Doubao audio could not play: ',
+        ttsDoubaoPlayHint: '. Try clicking “Send” on this page first, or open NPC.html standalone.',
+        ttsDoubaoFallback:
+          'Doubao TTS failed; fell back to local speech. Check App ID / Access Token / app.token / voice_type. Details: ',
+        metaVoiceInputUnsupported: 'This browser does not support Web Speech API; voice input is unavailable.',
+        metaModelLoadFail:
+          'Failed to load model. Ensure 模型/02-梵犀设计/02.FBX and the texture folder exist.'
+      }
+    };
+
+    function npcLocalePack() {
+      return window.sanxingduiLocale === 'en' ? 'en' : 'zh';
+    }
+
+    function tNpc(key) {
+      var pack = NPC_I18N[npcLocalePack()] || NPC_I18N.zh;
+      return Object.prototype.hasOwnProperty.call(pack, key) ? pack[key] : NPC_I18N.zh[key];
+    }
 
     const MODEL_URL = new URL('./模型/02-梵犀设计/02.FBX', import.meta.url).href;
     const TEXTURE_DIR = new URL('./模型/02-梵犀设计/texture/', import.meta.url).href;
@@ -698,9 +904,127 @@
     var streamRenderPending = false;
     var streamEllipsisIntervalId = null;
     var streamEllipsisDots = 0;
+    var recognizer = null;
+    var isRecording = false;
 
     const kbdSlash =
       '<kbd style="font-size:10px;padding:1px 5px;border:1px solid rgba(94,162,217,0.4);border-radius:4px;">/</kbd>';
+
+    function subKbd(template) {
+      return String(template).split('{kbd}').join(kbdSlash);
+    }
+
+    function syncChatSubtitle() {
+      if (!chatSubtitleEl) return;
+      chatSubtitleEl.innerHTML =
+        layoutMode === 'desk'
+          ? subKbd(tNpc('subtitleDesk'))
+          : subKbd(tNpc('subtitleCinema'));
+    }
+
+    function refreshTtsToggleLabel() {
+      if (ttsToggleEl) {
+        ttsToggleEl.textContent = ttsEnabled ? tNpc('ttsOn') : tNpc('ttsOff');
+      }
+    }
+
+    function refreshVoiceStatusIdle() {
+      if (voiceStatusEl && recognizer && !isRecording) {
+        voiceStatusEl.textContent = tNpc('voiceIdle');
+      }
+    }
+
+    function applyNpcLocale() {
+      try {
+        localStorage.setItem(LOCALE_KEY, window.sanxingduiLocale);
+      } catch (e) {}
+      document.documentElement.lang = window.sanxingduiLocale === 'en' ? 'en' : 'zh-CN';
+      document.title = tNpc('pageTitle');
+
+      var chatSec = document.getElementById('chat-pane-section');
+      if (chatSec) chatSec.setAttribute('aria-label', tNpc('chatAria'));
+
+      var h1 = document.getElementById('i18n-npc-h1');
+      if (h1) h1.textContent = tNpc('h1');
+      syncChatSubtitle();
+
+      if (clearHistoryEl) clearHistoryEl.textContent = tNpc('clearHistory');
+      if (textInputEl) textInputEl.placeholder = tNpc('inputPlaceholder');
+      if (voiceBtnEl) voiceBtnEl.title = tNpc('voiceBtnTitle');
+      if (sendBtnEl) sendBtnEl.textContent = tNpc('send');
+
+      refreshVoiceStatusIdle();
+      var srAvail = !!(window.SpeechRecognition || window.webkitSpeechRecognition);
+      if (voiceStatusEl && !srAvail) {
+        voiceStatusEl.textContent = tNpc('voiceUnsupported');
+      }
+
+      var ttl = document.getElementById('i18n-tts-row-label');
+      if (ttl) ttl.textContent = tNpc('ttsRowLabel');
+      if (ttsBackendEl) {
+        ttsBackendEl.title = tNpc('ttsSelectTitle');
+        ttsBackendEl.setAttribute('aria-label', tNpc('ttsSelectAria'));
+      }
+      var ow = document.getElementById('opt-tts-webspeech');
+      var od = document.getElementById('opt-tts-doubao');
+      if (ow) ow.textContent = tNpc('optWebspeech');
+      if (od) od.textContent = tNpc('optDoubao');
+      refreshTtsToggleLabel();
+
+      var apiPan = document.getElementById('api-key-panel');
+      if (apiPan) apiPan.setAttribute('aria-label', tNpc('apiPanelAria'));
+
+      var mapLbl = [
+        ['i18n-lbl-token', 'lblToken'],
+        ['i18n-lbl-model', 'lblModel'],
+        ['i18n-lbl-db-app', 'lblDbApp'],
+        ['i18n-lbl-db-ak', 'lblDbAk'],
+        ['i18n-lbl-db-res', 'lblDbRes'],
+        ['i18n-lbl-db-voice', 'lblDbVoice']
+      ];
+      mapLbl.forEach(function (pair) {
+        var el = document.getElementById(pair[0]);
+        if (el) el.textContent = tNpc(pair[1]);
+      });
+
+      if (apiTokenEl) apiTokenEl.placeholder = tNpc('phToken');
+      if (apiModelIdEl) apiModelIdEl.placeholder = tNpc('phModel');
+      if (doubaoAppIdEl) doubaoAppIdEl.placeholder = tNpc('phDbApp');
+      if (doubaoAccessKeyEl) doubaoAccessKeyEl.placeholder = tNpc('phDbAk');
+      if (doubaoResourceIdEl) doubaoResourceIdEl.placeholder = tNpc('phDbRes');
+      if (doubaoSpeakerEl) doubaoSpeakerEl.placeholder = tNpc('phDbVoice');
+
+      if (apiKeySaveHintEl) apiKeySaveHintEl.textContent = tNpc('apikeySaveHint');
+      if (apiKeySaveBtnEl) apiKeySaveBtnEl.textContent = tNpc('saveBtn');
+      if (apiKeyDockToggleEl) apiKeyDockToggleEl.textContent = tNpc('dockKeys');
+
+      var ll = document.getElementById('i18n-latest-label');
+      if (ll) ll.textContent = tNpc('latestLabel');
+      var vt = document.getElementById('i18n-viewer-tag');
+      if (vt) vt.textContent = tNpc('viewerTag');
+
+      var zhB = document.getElementById('lang-zh');
+      var enB = document.getElementById('lang-en');
+      if (zhB) {
+        zhB.classList.toggle('btn-lang-active', window.sanxingduiLocale === 'zh');
+        zhB.setAttribute('aria-pressed', window.sanxingduiLocale === 'zh' ? 'true' : 'false');
+      }
+      if (enB) {
+        enB.classList.toggle('btn-lang-active', window.sanxingduiLocale === 'en');
+        enB.setAttribute('aria-pressed', window.sanxingduiLocale === 'en' ? 'true' : 'false');
+      }
+
+      if (recognizer) {
+        recognizer.lang = window.sanxingduiLocale === 'en' ? 'en-US' : 'zh-CN';
+      }
+
+      if ('speechSynthesis' in window) {
+        ttsVoice = pickTtsVoice();
+      }
+
+      fillViewerReplyBubbleContent();
+      renderHistory();
+    }
 
     function saveHistory() {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(history));
@@ -716,7 +1040,7 @@
       if (!history.length) {
         const hello = {
           role: 'npc',
-          text: '你好，我是三星堆展厅 NPC。你可以问我文物背景、工艺或时代脉络。'
+          text: tNpc('welcome')
         };
         history.push(hello);
         saveHistory();
@@ -773,10 +1097,7 @@
         chatDeskTopEl.setAttribute('aria-hidden', layoutMode === 'cinematic' ? 'true' : 'false');
       }
       if (chatSubtitleEl) {
-        chatSubtitleEl.innerHTML =
-          layoutMode === 'desk'
-            ? '完整对话台 · 按 ' + kbdSlash + ' 进入沉浸模式（全屏模型 + 底部居中输入）'
-            : '沉浸模式 · 回复气泡锚在预览区右上 · 按 ' + kbdSlash + ' 恢复完整对话台';
+        syncChatSubtitle();
       }
 
       if (viewerReplyBubbleEl) {
@@ -815,7 +1136,7 @@
         }
         viewerReplyBubbleEl.classList.remove('is-placeholder');
       } else {
-        viewerReplyBodyEl.textContent = '暂无 NPC 回复，发送一条消息后此处显示最新回复。';
+        viewerReplyBodyEl.textContent = tNpc('bubbleEmpty');
         viewerReplyBubbleEl.classList.add('is-placeholder');
       }
     }
@@ -888,6 +1209,17 @@
       if (!('speechSynthesis' in window)) return [];
       var voices = window.speechSynthesis.getVoices() || [];
       return voices.filter(isZhSpeechVoice);
+    }
+
+    function isEnSpeechVoice(v) {
+      var lang = (v.lang || '').toLowerCase();
+      return /^en/i.test(lang);
+    }
+
+    function getEnSpeechVoices() {
+      if (!('speechSynthesis' in window)) return [];
+      var voices = window.speechSynthesis.getVoices() || [];
+      return voices.filter(isEnSpeechVoice);
     }
 
     function stopAllTts() {
@@ -998,24 +1330,29 @@
      */
     function pickTtsVoice() {
       if (!('speechSynthesis' in window)) return null;
-      var zhVoices = getZhSpeechVoices();
-      if (zhVoices.length) {
-        var male = zhVoices.find(isLikelyMaleSpeechVoice);
-        if (male) return male;
-        var neutral = zhVoices.find(function (v) {
-          return !isLikelyFemaleSpeechVoice(v);
-        });
-        if (neutral) return neutral;
-        return zhVoices[0];
+      if (npcLocalePack() === 'en') {
+        var enVoices = getEnSpeechVoices();
+        if (enVoices.length) return enVoices[0];
+      } else {
+        var zhVoices = getZhSpeechVoices();
+        if (zhVoices.length) {
+          var male = zhVoices.find(isLikelyMaleSpeechVoice);
+          if (male) return male;
+          var neutral = zhVoices.find(function (v) {
+            return !isLikelyFemaleSpeechVoice(v);
+          });
+          if (neutral) return neutral;
+          return zhVoices[0];
+        }
       }
       var voices = window.speechSynthesis.getVoices() || [];
       if (!voices.length) return null;
-      var male = voices.find(isLikelyMaleSpeechVoice);
-      if (male) return male;
-      var neutral = voices.find(function (v) {
+      var male2 = voices.find(isLikelyMaleSpeechVoice);
+      if (male2) return male2;
+      var neutral2 = voices.find(function (v) {
         return !isLikelyFemaleSpeechVoice(v);
       });
-      if (neutral) return neutral;
+      if (neutral2) return neutral2;
       return voices[0];
     }
 
@@ -1025,7 +1362,7 @@
      */
     function speakTextWebSpeech(text) {
       if (!('speechSynthesis' in window)) {
-        pushTtsMeta('当前浏览器不支持 Web Speech 朗读。');
+        pushTtsMeta(tNpc('ttsNoWebspeech'));
         return;
       }
       if (!text) return;
@@ -1046,40 +1383,42 @@
 
       function buildUtteranceStrategies() {
         var list = [];
+        var useEn = npcLocalePack() === 'en';
+        var primaryLang = useEn ? 'en-US' : 'zh-CN';
         list.push(function () {
           var u = new SpeechSynthesisUtterance(plain);
-          u.lang = 'zh-CN';
+          u.lang = primaryLang;
           u.rate = 1;
           u.pitch = 1;
           u.volume = 1;
           return u;
         });
-        var zh = getZhSpeechVoices();
-        var maxZh = Math.min(zh.length, 4);
-        for (var zi = 0; zi < maxZh; zi++) {
+        var localeVoices = useEn ? getEnSpeechVoices() : getZhSpeechVoices();
+        var maxV = Math.min(localeVoices.length, 4);
+        for (var zi = 0; zi < maxV; zi++) {
           (function (voice) {
             list.push(function () {
               var u = new SpeechSynthesisUtterance(plain);
               u.voice = voice;
-              u.lang = (voice.lang || 'zh-CN').slice(0, 32);
+              u.lang = (voice.lang || primaryLang).slice(0, 32);
               u.rate = 1;
               u.pitch = 1;
               u.volume = 1;
               return u;
             });
-          })(zh[zi]);
+          })(localeVoices[zi]);
         }
         var picked = ttsVoice || pickTtsVoice();
         if (picked) {
           var uri = picked.voiceURI || '';
-          var dup = zh.some(function (v) {
+          var dup = localeVoices.some(function (v) {
             return (v.voiceURI || '') === uri;
           });
           if (!dup) {
             list.push(function () {
               var u = new SpeechSynthesisUtterance(plain);
               u.voice = picked;
-              u.lang = (picked.lang || 'zh-CN').slice(0, 32);
+              u.lang = (picked.lang || primaryLang).slice(0, 32);
               u.rate = 1;
               u.pitch = 1;
               u.volume = 1;
@@ -1098,9 +1437,7 @@
       function finalizeFail(msg) {
         pushTtsMeta(
           msg ||
-            (IS_EMBEDDED
-              ? '嵌入页内本机朗读常被浏览器限制。请在「朗读」中选「豆包 TTS」，或新标签单独打开 NPC.html。'
-              : '本机语音多次重试仍失败。可试：换 Safari/Chrome、系统设置 → 辅助功能 → 「朗读内容」、或改用「豆包 TTS」。')
+            (IS_EMBEDDED ? tNpc('ttsFailEmbedded') : tNpc('ttsFailGeneral'))
         );
       }
 
@@ -1137,9 +1474,7 @@
           var code = ev && ev.error ? String(ev.error) : '';
           if (code === 'canceled' || code === 'interrupted') return;
           if (code === 'not-allowed') {
-            finalizeFail(
-              '朗读被浏览器拦截（not-allowed）。请先在本页内点击输入区或「发送」再试，或改用「豆包 TTS」。'
-            );
+            finalizeFail(tNpc('ttsNotAllowed'));
             return;
           }
           if (
@@ -1151,7 +1486,7 @@
             runAttempt(i + 1);
             return;
           }
-          finalizeFail('本机语音朗读失败（' + (code || 'unknown') + '）。');
+          finalizeFail(tNpc('ttsFailCode').split('{code}').join(code || 'unknown'));
         };
         speakAfterCancel(utter, i);
       }
@@ -1186,9 +1521,7 @@
         (doubaoResourceIdEl && doubaoResourceIdEl.value.trim()) || DOUBAO_DEFAULT_APP_TOKEN;
       var voiceType = (doubaoSpeakerEl && doubaoSpeakerEl.value.trim()) || DOUBAO_DEFAULT_VOICE_TYPE;
       if (!appId || !accessToken) {
-        pushTtsMeta(
-          '已选「豆包 TTS」但缺少 App ID 或 Access Token，请在右下角密钥面板补全。'
-        );
+        pushTtsMeta(tNpc('ttsDoubaoMissing'));
         speakTextWebSpeech(text);
         return;
       }
@@ -1234,15 +1567,15 @@
         try {
           obj = raw ? JSON.parse(raw) : null;
         } catch (e) {
-          throw new Error('豆包返回非 JSON：' + String(raw || '').slice(0, 200));
+          throw new Error(tNpc('errDoubaoNotJson') + String(raw || '').slice(0, 200));
         }
-        if (!obj) throw new Error('豆包返回为空');
+        if (!obj) throw new Error(tNpc('errDoubaoEmpty'));
         if (ac !== doubaoTtsAbort) return;
         if (Number(obj.code) !== 3000) {
-          throw new Error((obj && obj.message) || ('豆包返回错误码 ' + String(obj.code)));
+          throw new Error((obj && obj.message) || (tNpc('errDoubaoCode') + String(obj.code)));
         }
         if (typeof obj.data !== 'string' || !obj.data) {
-          throw new Error('豆包未返回音频 data 字段');
+          throw new Error(tNpc('errDoubaoNoData'));
         }
         var bin = atob(obj.data);
         var merged = new Uint8Array(bin.length);
@@ -1251,7 +1584,7 @@
 
         var el = document.getElementById('npc-tts-audio');
         if (!el) {
-          throw new Error('页面缺少音频元素 #npc-tts-audio');
+          throw new Error(tNpc('errNoAudioEl'));
         }
         doubaoTtsAudio = el;
         if (el.__npcBlobUrl) {
@@ -1278,9 +1611,9 @@
           if (p && p.catch) {
             p.catch(function (playErr) {
               pushTtsMeta(
-                '豆包音频无法播放：' +
+                tNpc('ttsDoubaoPlayFail') +
                   (playErr && playErr.message ? playErr.message : String(playErr)) +
-                  '。可先点击页面内「发送」再试，或单独打开 NPC.html。'
+                  tNpc('ttsDoubaoPlayHint')
               );
               speakTextWebSpeech(text);
             });
@@ -1290,8 +1623,7 @@
       } catch (err) {
         if (err && err.name === 'AbortError') return;
         pushTtsMeta(
-          '豆包 TTS 失败，已改用本机朗读。请检查 App ID / Access Token / app.token / voice_type。详情：' +
-            (err && err.message ? err.message : String(err))
+          tNpc('ttsDoubaoFallback') + (err && err.message ? err.message : String(err))
         );
         speakTextWebSpeech(text);
       }
@@ -1309,7 +1641,7 @@
     }
 
     function getFallbackReply(userText) {
-      return '【离线占位】已收到：' + userText + '\n请检查 API Key、模型 ID 或网络；若浏览器拦截跨域，请用本地静态服务打开本页或配置代理。';
+      return tNpc('fallbackReply').split('{q}').join(String(userText || ''));
     }
 
     function persistArkConfig() {
@@ -1426,7 +1758,7 @@
     async function streamArkChat(userText, onDelta) {
       const token = (apiTokenEl && apiTokenEl.value.trim()) || '';
       const model = (apiModelIdEl && apiModelIdEl.value.trim()) || ARK_DEFAULT_MODEL;
-      if (!token) throw new Error('未填写 API Key');
+      if (!token) throw new Error(tNpc('errNoApiKey'));
 
       const res = await fetch(ARK_API_URL, {
         method: 'POST',
@@ -1437,7 +1769,7 @@
         body: JSON.stringify({
           model: model,
           messages: [
-            { role: 'system', content: NPC_SYSTEM_PROMPT },
+            { role: 'system', content: getNpcSystemPrompt() },
             { role: 'user', content: userText },
           ],
           max_tokens: 512,
@@ -1460,7 +1792,7 @@
       }
 
       if (!res.body || typeof res.body.getReader !== 'function') {
-        throw new Error('当前环境不支持流式响应读取');
+        throw new Error(tNpc('errStreamUnsupported'));
       }
 
       const reader = res.body.getReader();
@@ -1512,7 +1844,7 @@
 
       const token = apiTokenEl && apiTokenEl.value.trim();
       if (!token) {
-        appendMessage('meta', '请先在下方填写方舟 API Key（与 ark_quickstart_package 中 curl 的 Bearer 一致），保存后会记在本地浏览器。');
+        appendMessage('meta', tNpc('metaNeedApiKey'));
         appendMessage('npc', getFallbackReply(text));
         return;
       }
@@ -1539,7 +1871,7 @@
         streamRenderPending = false;
         reply = String(reply || '').trim();
         if (history.length && history[history.length - 1].role === 'npc') {
-          history[history.length - 1].text = reply || '（未返回有效正文）';
+          history[history.length - 1].text = reply || tNpc('emptyReply');
         }
         saveHistory();
         renderHistory();
@@ -1556,7 +1888,7 @@
           history.pop();
         }
         saveHistory();
-        history.push({ role: 'meta', text: '方舟 API：' + msg });
+        history.push({ role: 'meta', text: tNpc('metaArkPrefix') + msg });
         history.push({ role: 'npc', text: getFallbackReply(text) });
         saveHistory();
         renderHistory();
@@ -1625,10 +1957,9 @@
       apiKeySaveBtnEl.addEventListener('click', function () {
         persistArkConfig();
         if (apiKeySaveHintEl) {
-          var prev = apiKeySaveHintEl.textContent;
-          apiKeySaveHintEl.textContent = '已保存到本机浏览器';
+          apiKeySaveHintEl.textContent = tNpc('savedHint');
           setTimeout(function () {
-            apiKeySaveHintEl.textContent = prev;
+            apiKeySaveHintEl.textContent = tNpc('apikeySaveHint');
           }, 2000);
         }
       });
@@ -1649,7 +1980,7 @@
     if (ttsToggleEl) {
       ttsToggleEl.addEventListener('click', function () {
         ttsEnabled = !ttsEnabled;
-        ttsToggleEl.textContent = '语音回复：' + (ttsEnabled ? '开' : '关');
+        refreshTtsToggleLabel();
         if (!ttsEnabled) {
           stopAllTts();
         }
@@ -1676,19 +2007,17 @@
 
     // ===== Voice Input (Web Speech API) =====
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    let recognizer = null;
-    let isRecording = false;
 
     if (SpeechRecognition) {
       recognizer = new SpeechRecognition();
-      recognizer.lang = 'zh-CN';
+      recognizer.lang = window.sanxingduiLocale === 'en' ? 'en-US' : 'zh-CN';
       recognizer.continuous = false;
       recognizer.interimResults = true;
 
       recognizer.onstart = function () {
         isRecording = true;
         voiceBtnEl.classList.add('recording');
-        voiceStatusEl.textContent = '语音状态：录音中...';
+        voiceStatusEl.textContent = tNpc('voiceRecording');
       };
 
       recognizer.onresult = function (event) {
@@ -1702,17 +2031,17 @@
       recognizer.onend = function () {
         isRecording = false;
         voiceBtnEl.classList.remove('recording');
-        voiceStatusEl.textContent = '语音状态：待机';
+        voiceStatusEl.textContent = tNpc('voiceIdle');
       };
 
       recognizer.onerror = function () {
         isRecording = false;
         voiceBtnEl.classList.remove('recording');
-        voiceStatusEl.textContent = '语音状态：异常，请重试';
+        voiceStatusEl.textContent = tNpc('voiceError');
       };
     } else {
-      voiceStatusEl.textContent = '语音状态：当前浏览器不支持';
-      appendMessage('meta', '当前浏览器不支持 Web Speech API，语音输入不可用。');
+      voiceStatusEl.textContent = tNpc('voiceUnsupported');
+      appendMessage('meta', tNpc('metaVoiceInputUnsupported'));
     }
 
     voiceBtnEl.addEventListener('click', function () {
@@ -1724,10 +2053,28 @@
       }
     });
 
+    var langZhBtn = document.getElementById('lang-zh');
+    var langEnBtn = document.getElementById('lang-en');
+    if (langZhBtn) {
+      langZhBtn.addEventListener('click', function () {
+        if (window.sanxingduiLocale === 'zh') return;
+        window.sanxingduiLocale = 'zh';
+        applyNpcLocale();
+      });
+    }
+    if (langEnBtn) {
+      langEnBtn.addEventListener('click', function () {
+        if (window.sanxingduiLocale === 'en') return;
+        window.sanxingduiLocale = 'en';
+        applyNpcLocale();
+      });
+    }
+
     loadArkConfig();
     void loadApiKeyFromTxtFile();
     loadHistory();
     setLayoutMode('desk');
+    applyNpcLocale();
 
     // ===== 3D Viewer (Model 2 + textures) =====
     const canvas = document.getElementById('npc-canvas');
@@ -1854,7 +2201,7 @@
       undefined,
       function (err) {
         console.error(err);
-        appendMessage('meta', '模型加载失败，请确认 模型/02-梵犀设计/02.FBX 与 texture 目录存在。');
+        appendMessage('meta', tNpc('metaModelLoadFail'));
       }
     );
 
