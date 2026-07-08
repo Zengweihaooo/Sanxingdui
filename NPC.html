@@ -763,7 +763,7 @@
         ttsDoubaoFallback:
           '豆包 TTS 失败，已改用本机朗读。请检查 App ID / Access Token / app.token / voice_type。详情：',
         metaVoiceInputUnsupported: '当前浏览器不支持 Web Speech API，语音输入不可用。',
-        metaModelLoadFail: '模型加载失败，请确认 模型/02-梵犀设计/02.FBX 与 texture 目录存在。'
+        metaModelLoadFail: '模型加载失败，请确认 models/02-fanxi-design/02.FBX 与 texture 目录存在。'
       },
       en: {
         pageTitle: 'NPC Console · Sanxingdui',
@@ -837,7 +837,7 @@
           'Doubao TTS failed; fell back to local speech. Check App ID / Access Token / app.token / voice_type. Details: ',
         metaVoiceInputUnsupported: 'This browser does not support Web Speech API; voice input is unavailable.',
         metaModelLoadFail:
-          'Failed to load model. Ensure 模型/02-梵犀设计/02.FBX and the texture folder exist.'
+          'Failed to load model. Ensure models/02-fanxi-design/02.FBX and the texture folder exist.'
       }
     };
 
@@ -850,8 +850,8 @@
       return Object.prototype.hasOwnProperty.call(pack, key) ? pack[key] : NPC_I18N.zh[key];
     }
 
-    const MODEL_URL = new URL('./模型/02-梵犀设计/02.FBX', import.meta.url).href;
-    const TEXTURE_DIR = new URL('./模型/02-梵犀设计/texture/', import.meta.url).href;
+    const MODEL_URL = new URL('./models/02-fanxi-design/02.FBX', import.meta.url).href;
+    const TEXTURE_DIR = new URL('./models/02-fanxi-design/texture/', import.meta.url).href;
     /** 与 NPC.html 同目录的 apikey.txt（可用符号链接指向 ~/Desktop/apikey.txt）；需用本地 HTTP 打开本页，file:// 下多数浏览器无法 fetch */
     const APIKEY_TXT_URL = new URL('./apikey.txt', import.meta.url);
 

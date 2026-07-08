@@ -32,7 +32,8 @@
   </script>
 <style data-purpose="custom-shapes">
     html {
-      background: #07090d;
+      height: 100%;
+      background: #ffffff;
     }
 
     body {
@@ -40,7 +41,25 @@
       color: #fff;
       overflow: hidden;
       min-height: 100vh;
+      margin: 0;
       background: #07090d;
+    }
+
+    .recording-frame {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background: #07090d;
+    }
+
+    .recording-frame .bg-stage {
+      position: absolute;
+      inset: 0;
+    }
+
+    .recording-frame .fixed {
+      position: absolute !important;
     }
 
     .page-scroll {
@@ -143,6 +162,7 @@
       z-index: 1;
       clip-path: polygon(10px 0%, 100% 0%, calc(100% - 10px) 100%, 0% 100%);
       cursor: pointer;
+      touch-action: manipulation;
       background: rgba(20, 26, 33, 0.7);
       border: 1px solid rgba(74, 107, 140, 0.3);
       box-shadow: inset 0 0 10px rgba(94, 162, 217, 0.1);
@@ -198,6 +218,12 @@
       position: relative;
       clip-path: polygon(8px 0%, 100% 0%, calc(100% - 8px) 100%, 0% 100%);
       overflow: hidden;
+    }
+
+    .timeline-node img {
+      pointer-events: none;
+      user-select: none;
+      -webkit-user-drag: none;
     }
 
     .node-image-container::after {
@@ -281,6 +307,14 @@
       background: rgba(94, 162, 217, 0.22);
       color: #e8f2ff;
     }
+
+    #fullscreen-hint {
+      pointer-events: none;
+    }
+
+    #fullscreen-hint .fullscreen-hint-card {
+      pointer-events: auto;
+    }
   </style>
 </head>
 <body class="min-h-screen text-sm select-none">
@@ -344,7 +378,7 @@
 <div id="node-start" class="absolute left-10 top-[310px] w-52">
 <div class="timeline-node active p-1 flex flex-col">
 <div class="node-image-container h-24 bg-black relative">
-<img alt="祭祀坑" class="w-full h-full object-cover" src="图片/download%20(1).jpeg"/>
+<img alt="祭祀坑" class="w-full h-full object-cover" src="images/download%20(1).jpeg"/>
 </div>
 <div class="p-2 pb-3">
 <p class="text-[10px] uppercase text-textMuted tracking-wider leading-tight">选定探方起点<br/><span class="text-white">一号祭祀坑</span></p>
@@ -355,7 +389,7 @@
 <div id="node-top-main" class="absolute left-[360px] top-[150px] w-52">
 <div class="timeline-node p-1 flex flex-col">
 <div class="node-image-container h-24 bg-black relative">
-<img alt="青铜面具" class="w-full h-full object-cover" src="图片/download.jpeg"/>
+<img alt="青铜面具" class="w-full h-full object-cover" src="images/download.jpeg"/>
 </div>
 <div class="p-2">
 <p class="text-[10px] uppercase text-white tracking-wider leading-tight mb-2">广汉鸭子河沿岸<br/>勘探与发掘布设</p>
@@ -372,7 +406,7 @@
 <div id="node-zongmu" class="absolute left-[740px] top-[10px] w-44">
 <div class="timeline-node p-1 flex flex-col">
 <div class="node-image-container h-14 bg-black relative">
-<img alt="纵目面具" class="w-full h-full object-cover" src="图片/gettyimages-1232194471-612x612.jpg"/>
+<img alt="纵目面具" class="w-full h-full object-cover" src="images/gettyimages-1232194471-612x612.jpg"/>
 </div>
 <div class="p-2 py-1">
 <p class="text-[9px] uppercase text-white tracking-wider leading-tight mb-1">青铜纵目面具<br/>提取与记录</p>
@@ -388,7 +422,7 @@
 <div id="node-yuqi" class="absolute left-[740px] top-[150px] w-44">
 <div class="timeline-node p-1 flex flex-col">
 <div class="node-image-container h-14 bg-black relative">
-<img alt="玉器层" class="w-full h-full object-cover" src="图片/gettyimages-1308124891-612x612.jpg"/>
+<img alt="玉器层" class="w-full h-full object-cover" src="images/gettyimages-1308124891-612x612.jpg"/>
 </div>
 <div class="p-2 py-1">
 <p class="text-[9px] uppercase text-white tracking-wider leading-tight mb-1">玉器与象牙叠压层<br/>逐层清理</p>
@@ -404,7 +438,7 @@
 <div id="node-jinmian" class="absolute left-[740px] top-[250px] w-44">
 <div class="timeline-node p-1 flex flex-col">
 <div class="node-image-container h-14 bg-black relative">
-<img alt="黄金面罩" class="w-full h-full object-cover" src="图片/gettyimages-1308127375-612x612.jpg"/>
+<img alt="黄金面罩" class="w-full h-full object-cover" src="images/gettyimages-1308127375-612x612.jpg"/>
 </div>
 <div class="p-2 py-1">
 <p class="text-[9px] uppercase text-white tracking-wider leading-tight mb-1">金面罩与薄金饰<br/>显微取样</p>
@@ -420,7 +454,7 @@
 <div id="node-shenshu" class="absolute left-[860px] top-[60px] w-44">
 <div class="timeline-node p-1 flex flex-col">
 <div class="node-image-container h-14 bg-black relative">
-<img alt="青铜神树" class="w-full h-full object-cover" src="图片/gettyimages-1308128453-612x612.jpg"/>
+<img alt="青铜神树" class="w-full h-full object-cover" src="images/gettyimages-1308128453-612x612.jpg"/>
 </div>
 <div class="p-2 py-1">
 <p class="text-[9px] uppercase text-white tracking-wider leading-tight mb-1">青铜神树构件<br/>拼对与复原</p>
@@ -437,7 +471,7 @@
 <div id="node-hub-top" class="absolute left-[1080px] top-[200px] w-52">
 <div class="timeline-node p-1 flex flex-col">
 <div class="node-image-container h-20 bg-black relative">
-<img alt="青铜神坛" class="w-full h-full object-cover" src="图片/gettyimages-1340673035-612x612.jpg"/>
+<img alt="青铜神坛" class="w-full h-full object-cover" src="images/gettyimages-1340673035-612x612.jpg"/>
 </div>
 <div class="p-2">
 <p class="text-[10px] uppercase text-white tracking-wider leading-tight mb-2">祭祀遗存链<br/>青铜神坛与立人</p>
@@ -452,7 +486,7 @@
 <div id="node-quanzhang" class="absolute left-[1280px] top-[120px] w-48">
 <div class="timeline-node p-1 flex flex-col">
 <div class="node-image-container h-16 bg-black relative">
-<img alt="黄金权杖" class="w-full h-full object-cover" src="图片/gettyimages-1403170630-612x612.jpg"/>
+<img alt="黄金权杖" class="w-full h-full object-cover" src="images/gettyimages-1403170630-612x612.jpg"/>
 </div>
 <div class="p-2">
 <p class="text-[10px] uppercase text-white tracking-wider leading-tight mb-2">金杖纹饰<br/>与族徽线索</p>
@@ -468,7 +502,7 @@
 <div id="node-zhuijiao" class="absolute left-[1480px] top-[60px] w-48">
 <div class="timeline-node p-1 flex flex-col">
 <div class="node-image-container h-16 bg-black relative">
-<img alt="追缴文物" class="w-full h-full object-cover" src="图片/gettyimages-1413610906-612x612.jpg"/>
+<img alt="追缴文物" class="w-full h-full object-cover" src="images/gettyimages-1413610906-612x612.jpg"/>
 </div>
 <div class="p-2">
 <p class="text-[10px] uppercase text-white tracking-wider leading-tight mb-2">追缴与回流<br/>青铜重器</p>
@@ -482,7 +516,7 @@
 <div id="node-haiwai" class="absolute left-[1720px] top-[40px] w-44">
 <div class="timeline-node p-1 flex flex-col">
 <div class="node-image-container h-16 bg-black relative">
-<img alt="海外线索" class="w-full h-full object-cover" src="图片/gettyimages-1413610915-612x612.jpg"/>
+<img alt="海外线索" class="w-full h-full object-cover" src="images/gettyimages-1413610915-612x612.jpg"/>
 </div>
 <div class="p-2 py-1">
 <p class="text-[9px] uppercase text-white tracking-wider leading-tight mb-1">海外拍卖与<br/>走私链追踪</p>
@@ -498,7 +532,7 @@
 <div id="node-yuzhang" class="absolute left-[1720px] top-[260px] w-44">
 <div class="timeline-node p-1 flex flex-col">
 <div class="node-image-container h-16 bg-black relative">
-<img alt="玉璋" class="w-full h-full object-cover" src="图片/gettyimages-2163362809-612x612.jpg"/>
+<img alt="玉璋" class="w-full h-full object-cover" src="images/gettyimages-2163362809-612x612.jpg"/>
 </div>
 <div class="p-2 py-1">
 <p class="text-[9px] uppercase text-white tracking-wider leading-tight mb-1">玉璋与牙璋<br/>类型学比对</p>
@@ -515,7 +549,7 @@
 <div id="node-bottom-main" class="absolute left-[360px] top-[470px] w-52">
 <div class="timeline-node p-1 flex flex-col">
 <div class="node-image-container h-24 bg-black relative">
-<img alt="二号坑" class="w-full h-full object-cover" src="图片/gettyimages-2163362814-612x612.jpg"/>
+<img alt="二号坑" class="w-full h-full object-cover" src="images/gettyimages-2163362814-612x612.jpg"/>
 </div>
 <div class="p-2">
 <p class="text-[10px] uppercase text-white tracking-wider leading-tight mb-2">二号祭祀坑<br/>象牙与青铜器群</p>
@@ -532,7 +566,7 @@
 <div id="node-liankao" class="absolute left-[740px] top-[350px] w-44">
 <div class="timeline-node p-1 flex flex-col">
 <div class="node-image-container h-14 bg-black relative">
-<img alt="联合考古" class="w-full h-full object-cover" src="图片/gettyimages-2229684360-612x612.jpg"/>
+<img alt="联合考古" class="w-full h-full object-cover" src="images/gettyimages-2229684360-612x612.jpg"/>
 </div>
 <div class="p-2 py-1">
 <p class="text-[9px] uppercase text-white tracking-wider leading-tight mb-1">现场防护成功<br/>盗扰未得逞</p>
@@ -548,7 +582,7 @@
 <div id="node-canpian" class="absolute left-[740px] top-[440px] w-44">
 <div class="timeline-node p-1 flex flex-col">
 <div class="node-image-container h-14 bg-black relative">
-<img alt="残片" class="w-full h-full object-cover" src="图片/gettyimages-2229684365-612x612.jpg"/>
+<img alt="残片" class="w-full h-full object-cover" src="images/gettyimages-2229684365-612x612.jpg"/>
 </div>
 <div class="p-2 py-1">
 <p class="text-[9px] uppercase text-white tracking-wider leading-tight mb-1">残片被带离现场<br/>需追缴</p>
@@ -564,7 +598,7 @@
 <div id="node-fanghu" class="absolute left-[740px] top-[530px] w-44">
 <div class="timeline-node p-1 flex flex-col">
 <div class="node-image-container h-14 bg-black relative">
-<img alt="防护缺口" class="w-full h-full object-cover" src="图片/gettyimages-2230271544-612x612.jpg"/>
+<img alt="防护缺口" class="w-full h-full object-cover" src="images/gettyimages-2230271544-612x612.jpg"/>
 </div>
 <div class="p-2 py-1">
 <p class="text-[9px] uppercase text-white tracking-wider leading-tight mb-1">防护出现缺口<br/>遗存风险升高</p>
@@ -580,7 +614,7 @@
 <div id="node-tuyang" class="absolute left-[860px] top-[580px] w-44">
 <div class="timeline-node p-1 flex flex-col">
 <div class="node-image-container h-14 bg-black relative">
-<img alt="土样" class="w-full h-full object-cover" src="图片/gettyimages-2241618709-612x612.jpg"/>
+<img alt="土样" class="w-full h-full object-cover" src="images/gettyimages-2241618709-612x612.jpg"/>
 </div>
 <div class="p-2 py-1">
 <p class="text-[9px] uppercase text-white tracking-wider leading-tight mb-1">碳十四与<br/>土样测年支线</p>
@@ -597,7 +631,7 @@
 <div id="node-fix" class="absolute left-[1080px] top-[390px] w-52">
 <div class="timeline-node p-1 flex flex-col">
 <div class="node-image-container h-20 bg-black relative">
-<img alt="修复" class="w-full h-full object-cover" src="图片/gettyimages-925866188-612x612.jpg"/>
+<img alt="修复" class="w-full h-full object-cover" src="images/gettyimages-925866188-612x612.jpg"/>
 </div>
 <div class="p-2">
 <p class="text-[10px] uppercase text-white tracking-wider leading-tight mb-2">金器清洗与修复<br/>入藏著录</p>
@@ -611,7 +645,7 @@
 <div id="node-museum" class="absolute left-[1480px] top-[400px] w-48">
 <div class="timeline-node p-1 flex flex-col">
 <div class="node-image-container h-16 bg-black relative">
-<img alt="博物馆" class="w-full h-full object-cover" src="图片/images.jpeg"/>
+<img alt="博物馆" class="w-full h-full object-cover" src="images/images.jpeg"/>
 </div>
 <div class="p-2">
 <p class="text-[10px] uppercase text-white tracking-wider leading-tight mb-2">三星堆博物馆<br/>常展与借展</p>
@@ -627,7 +661,7 @@
 <div id="node-heishi" class="absolute left-[1720px] top-[520px] w-44">
 <div class="timeline-node p-1 flex flex-col">
 <div class="node-image-container h-16 bg-black relative">
-<img alt="黑市" class="w-full h-full object-cover" src="图片/images.jpeg"/>
+<img alt="黑市" class="w-full h-full object-cover" src="images/images.jpeg"/>
 </div>
 <div class="p-2 py-1">
 <p class="text-[9px] uppercase text-white tracking-wider leading-tight mb-1">文物流向灰色市场<br/>追踪困难</p>
@@ -700,7 +734,7 @@
   id="fullscreen-hint"
   class="fixed inset-0 z-[70] hidden items-center justify-center bg-black/70 p-4"
 >
-  <div class="w-full max-w-md bg-[#07090d]/95 border border-white/15 rounded-lg p-4 shadow-2xl">
+  <div class="fullscreen-hint-card w-full max-w-md bg-[#07090d]/95 border border-white/15 rounded-lg p-4 shadow-2xl">
     <p id="i18n-fs-msg" class="text-sm text-textMuted leading-relaxed mb-3">
       浏览器限制：需要用户操作才能进入全屏。
     </p>
@@ -775,6 +809,18 @@
   <div id="panorama-viewer-b" class="absolute inset-0 opacity-0 pointer-events-none"></div>
 </div>
 <!-- END: Panorama overlay -->
+<script>
+(function () {
+  var frame = document.createElement('div');
+  frame.className = 'recording-frame';
+  var children = Array.prototype.slice.call(document.body.children);
+  children.forEach(function (node) {
+    if (node.tagName === 'SCRIPT') return;
+    frame.appendChild(node);
+  });
+  document.body.insertBefore(frame, document.body.firstChild);
+})();
+</script>
 <script>
 (function () {
   var overlay = document.getElementById('model-viewer-overlay');
@@ -861,7 +907,7 @@
   var viewerAEl = document.getElementById('panorama-viewer-a');
   var viewerBEl = document.getElementById('panorama-viewer-b');
   var imagePaths = [];
-  var fallbackImagePaths = ['全景/全景1.JPG', '全景/全景2.jpg'];
+  var fallbackImagePaths = ['panoramas/panorama-1.JPG', 'panoramas/panorama-2.jpg'];
   var viewerA = null;
   var viewerB = null;
   var activeIndex = 0;
@@ -918,12 +964,12 @@
 
   function pickFirstExistingForIndex(num) {
     var candidates = [
-      '全景/全景' + num + '.JPG',
-      '全景/全景' + num + '.jpg',
-      '全景/全景' + num + '.JPEG',
-      '全景/全景' + num + '.jpeg',
-      '全景/全景' + num + '.PNG',
-      '全景/全景' + num + '.png'
+      'panoramas/panorama-' + num + '.JPG',
+      'panoramas/panorama-' + num + '.jpg',
+      'panoramas/panorama-' + num + '.JPEG',
+      'panoramas/panorama-' + num + '.jpeg',
+      'panoramas/panorama-' + num + '.PNG',
+      'panoramas/panorama-' + num + '.png'
     ];
     return Promise.all(candidates.map(function (src) {
       return preloadImage(src).then(function (ok) {
@@ -948,7 +994,7 @@
         discovered.push(src);
       }
       imagePaths = discovered.length ? discovered : fallbackImagePaths.slice();
-      if (!imagePaths.length) imagePaths = ['全景/全景1.JPG'];
+      if (!imagePaths.length) imagePaths = ['panoramas/panorama-1.JPG'];
       return imagePaths;
     })();
     return imageListReadyPromise;
@@ -1118,7 +1164,18 @@
   var scene = document.querySelector('.page-scroll');
   var board = document.getElementById('timeline-board');
   var svg = document.getElementById('connection-svg');
+  var frame = document.querySelector('.recording-frame');
   if (!scene || !board || !svg) return;
+
+  function viewportSize() {
+    if (frame) {
+      var rect = frame.getBoundingClientRect();
+      if (rect.width > 0 && rect.height > 0) {
+        return { w: rect.width, h: rect.height };
+      }
+    }
+    return { w: window.innerWidth, h: window.innerHeight };
+  }
 
   var camera = {
     scale: 1.14,
@@ -1141,7 +1198,8 @@
     maxX: 0,
     maxY: 0,
     idleBreathStartMs: 550,
-    idleBreathFadeMs: 900
+    idleBreathFadeMs: 900,
+    pointerLocked: false
   };
 
   var edges = [
@@ -1195,49 +1253,52 @@
   }
 
   function updateCameraTarget(scaleOverride) {
+    var vp = viewportSize();
     var s = typeof scaleOverride === 'number' ? scaleOverride : camera.scale;
     var sceneW = scene.scrollWidth;
     var sceneH = scene.scrollHeight;
-    var visibleW = window.innerWidth / s;
-    var visibleH = window.innerHeight / s;
+    var visibleW = vp.w / s;
+    var visibleH = vp.h / s;
     var maxX = Math.max(0, sceneW - visibleW);
     var maxY = Math.max(0, sceneH - visibleH);
     camera.maxX = maxX;
     camera.maxY = maxY;
-    var nx = clamp(camera.mouseX / window.innerWidth, 0, 1);
-    var ny = clamp(camera.mouseY / window.innerHeight, 0, 1);
+    var nx = clamp(camera.mouseX / vp.w, 0, 1);
+    var ny = clamp(camera.mouseY / vp.h, 0, 1);
     camera.targetX = edgeEaseProgress(nx) * maxX;
     camera.targetY = edgeEaseProgress(ny) * maxY;
   }
 
   function tickCamera() {
-    // 平滑变焦
-    camera.scale += (camera.scaleTarget - camera.scale) * camera.scaleLerp;
-    camera.scale = clamp(camera.scale, camera.scaleMin, camera.scaleMax);
+    if (!camera.pointerLocked) {
+      // 平滑变焦
+      camera.scale += (camera.scaleTarget - camera.scale) * camera.scaleLerp;
+      camera.scale = clamp(camera.scale, camera.scaleMin, camera.scaleMax);
 
-    // 先更新目标（受当前 scale 影响）
-    updateCameraTarget(camera.scale);
+      // 先更新目标（受当前 scale 影响）
+      updateCameraTarget(camera.scale);
 
-    // 鼠标静止后：轻微呼吸漂移
-    var now = performance.now();
-    var idleFor = now - camera.lastMouseMoveAt;
-    var idleT = clamp((idleFor - camera.idleBreathStartMs) / camera.idleBreathFadeMs, 0, 1);
-    if (idleT > 0) {
-      var t = now / 1000;
-      var ampX = camera.maxX * 0.03;
-      var ampY = camera.maxY * 0.02;
-      var bx = Math.sin(t * 0.78) * ampX * idleT;
-      var by = Math.cos(t * 0.86) * ampY * idleT;
-      camera.targetX = clamp(camera.targetX + bx, 0, camera.maxX);
-      camera.targetY = clamp(camera.targetY + by, 0, camera.maxY);
+      // 鼠标静止后：轻微呼吸漂移
+      var now = performance.now();
+      var idleFor = now - camera.lastMouseMoveAt;
+      var idleT = clamp((idleFor - camera.idleBreathStartMs) / camera.idleBreathFadeMs, 0, 1);
+      if (idleT > 0) {
+        var t = now / 1000;
+        var ampX = camera.maxX * 0.03;
+        var ampY = camera.maxY * 0.02;
+        var bx = Math.sin(t * 0.78) * ampX * idleT;
+        var by = Math.cos(t * 0.86) * ampY * idleT;
+        camera.targetX = clamp(camera.targetX + bx, 0, camera.maxX);
+        camera.targetY = clamp(camera.targetY + by, 0, camera.maxY);
+      }
+
+      camera.vx += (camera.targetX - camera.x) * camera.stiffness;
+      camera.vy += (camera.targetY - camera.y) * camera.stiffness;
+      camera.vx *= camera.damping;
+      camera.vy *= camera.damping;
+      camera.x += camera.vx;
+      camera.y += camera.vy;
     }
-
-    camera.vx += (camera.targetX - camera.x) * camera.stiffness;
-    camera.vy += (camera.targetY - camera.y) * camera.stiffness;
-    camera.vx *= camera.damping;
-    camera.vy *= camera.damping;
-    camera.x += camera.vx;
-    camera.y += camera.vy;
 
     var tx = -camera.x;
     var ty = -camera.y;
@@ -1248,13 +1309,45 @@
   function resetCameraIfNeeded() {
     camera.scaleTarget = camera.scale;
     updateCameraTarget(camera.scale);
-    camera.x = clamp(camera.x, 0, Math.max(0, scene.scrollWidth - window.innerWidth / camera.scale));
-    camera.y = clamp(camera.y, 0, Math.max(0, scene.scrollHeight - window.innerHeight / camera.scale));
+    var vp = viewportSize();
+    camera.x = clamp(camera.x, 0, Math.max(0, scene.scrollWidth - vp.w / camera.scale));
+    camera.y = clamp(camera.y, 0, Math.max(0, scene.scrollHeight - vp.h / camera.scale));
   }
 
+  function setPointerLocked(locked) {
+    camera.pointerLocked = locked;
+    if (locked) {
+      camera.vx = 0;
+      camera.vy = 0;
+      return;
+    }
+    camera.lastMouseMoveAt = performance.now();
+    updateCameraTarget();
+  }
+
+  window.addEventListener('pointerdown', function (e) {
+    if (e.button !== 0) return;
+    setPointerLocked(true);
+  }, true);
+
+  window.addEventListener('pointerup', function (e) {
+    if (e.button !== 0) return;
+    setPointerLocked(false);
+  });
+
+  window.addEventListener('pointercancel', function () {
+    setPointerLocked(false);
+  });
+
+  window.addEventListener('blur', function () {
+    setPointerLocked(false);
+  });
+
   window.addEventListener('mousemove', function (e) {
-    camera.mouseX = e.clientX;
-    camera.mouseY = e.clientY;
+    if (camera.pointerLocked) return;
+    var vp = viewportSize();
+    camera.mouseX = clamp(e.clientX, 0, vp.w);
+    camera.mouseY = clamp(e.clientY, 0, vp.h);
     camera.lastMouseMoveAt = performance.now();
     updateCameraTarget();
   });
@@ -1274,18 +1367,19 @@
     if (Math.abs(nextScale - camera.scaleTarget) < 0.0001) return;
 
     // 让缩放时尽量保持“鼠标下方点”不漂移
-    var pxRatio = e.clientX / window.innerWidth;
-    var pyRatio = e.clientY / window.innerHeight;
+    var vp = viewportSize();
+    var pxRatio = clamp(e.clientX / vp.w, 0, 1);
+    var pyRatio = clamp(e.clientY / vp.h, 0, 1);
 
-    var visibleWNow = window.innerWidth / camera.scale;
-    var visibleHNow = window.innerHeight / camera.scale;
+    var visibleWNow = vp.w / camera.scale;
+    var visibleHNow = vp.h / camera.scale;
     var anchorSceneX = camera.x + pxRatio * visibleWNow;
     var anchorSceneY = camera.y + pyRatio * visibleHNow;
 
     camera.scaleTarget = nextScale;
 
-    var visibleWNew = window.innerWidth / camera.scaleTarget;
-    var visibleHNew = window.innerHeight / camera.scaleTarget;
+    var visibleWNew = vp.w / camera.scaleTarget;
+    var visibleHNew = vp.h / camera.scaleTarget;
     var maxXNew = Math.max(0, scene.scrollWidth - visibleWNew);
     var maxYNew = Math.max(0, scene.scrollHeight - visibleHNew);
 
@@ -1296,8 +1390,8 @@
     camera.vx = 0;
     camera.vy = 0;
 
-    camera.mouseX = e.clientX;
-    camera.mouseY = e.clientY;
+    camera.mouseX = clamp(e.clientX, 0, vp.w);
+    camera.mouseY = clamp(e.clientY, 0, vp.h);
     camera.lastMouseMoveAt = performance.now();
     updateCameraTarget(camera.scaleTarget);
   }, { passive: false });
@@ -1506,26 +1600,26 @@
     }
   }
   var videoFiles = [
-    './视频/01.mp4',
-    './视频/02.mp4',
-    './视频/03.mp4',
-    './视频/04.MP4',
-    './视频/05.mp4',
-    './视频/06.mp4',
-    './视频/07.mp4',
-    './视频/08.mp4',
-    './视频/09.mp4'
+    './videos/01.mp4',
+    './videos/02.mp4',
+    './videos/03.mp4',
+    './videos/04.MP4',
+    './videos/05.mp4',
+    './videos/06.mp4',
+    './videos/07.mp4',
+    './videos/08.mp4',
+    './videos/09.mp4'
   ];
   var coverFiles = [
-    '图片/01.png',
-    '图片/02.png',
-    '图片/03.png',
-    '图片/04.png',
-    '图片/05.png',
-    '图片/06.png',
-    '图片/07.png',
-    '图片/08.png',
-    '图片/09.png'
+    'images/01.png',
+    'images/02.png',
+    'images/03.png',
+    'images/04.png',
+    'images/05.png',
+    'images/06.png',
+    'images/07.png',
+    'images/08.png',
+    'images/09.png'
   ];
   var videoCards = allNodes.slice(0, STORYLINE_TITLES_ZH.length);
 
@@ -1598,7 +1692,7 @@
     var primary = videoFiles[index0];
     var fallback = videoFiles[0];
     var needMini = index0 === 5;
-    var miniSrc = './视频/八小.mov';
+    var miniSrc = './videos/mini-shot.mov';
 
     var usedFallback = false;
     showModal();
@@ -1676,76 +1770,82 @@
     player.removeEventListener('ended', syncEnd);
   }
 
-  videoCards.forEach(function (node, idx) {
-    node.addEventListener('click', function (e) {
+  function bindTimelineTap(node, handler) {
+    if (!node) return;
+    var startX = 0;
+    var startY = 0;
+    node.addEventListener('pointerdown', function (e) {
+      if (e.button !== 0) return;
+      startX = e.clientX;
+      startY = e.clientY;
+    });
+    node.addEventListener('pointerup', function (e) {
+      if (e.button !== 0) return;
+      if (Math.hypot(e.clientX - startX, e.clientY - startY) > 10) return;
+      e.preventDefault();
       e.stopPropagation();
+      handler(e);
+    });
+  }
+
+  videoCards.forEach(function (node, idx) {
+    bindTimelineTap(node, function () {
       playVideoForIndex(idx);
     });
   });
 
   var modelNode = allNodes[9];
-  if (modelNode) {
-    modelNode.addEventListener('click', function (e) {
-      e.stopPropagation();
-      if (typeof window.sanxingduiOpenModelViewer === 'function') {
-        window.sanxingduiOpenModelViewer();
-      } else {
-        window.location.href = 'model-viewer.html';
-      }
-    });
-  }
-
   var seventeenth = allNodes[16];
-  if (seventeenth) {
-    seventeenth.addEventListener('click', function (e) {
-      e.stopPropagation();
-      if (typeof window.sanxingduiOpenNpcOverlay === 'function') {
-        window.sanxingduiOpenNpcOverlay();
-      } else {
-        window.location.href = 'NPC.html?embedded=1';
-      }
-    });
-  }
-
   var eighteenth = allNodes[17];
-  if (eighteenth) {
-    eighteenth.addEventListener('click', function (e) {
-      e.stopPropagation();
-      if (typeof window.sanxingduiOpenPanorama === 'function') {
-        window.sanxingduiOpenPanorama();
-      }
-    });
-  }
-
   var externalNode = allNodes[10];
-  if (externalNode) {
-    externalNode.addEventListener('click', function (e) {
-      e.stopPropagation();
-      var targetUrl = 'https://www.shenzhenmuseum.com/v/ljsxd/';
-      var docEl = document.documentElement;
-      var requestFullscreen =
-        docEl.requestFullscreen ||
-        docEl.webkitRequestFullscreen ||
-        docEl.mozRequestFullScreen ||
-        docEl.msRequestFullscreen;
 
-      // 用户手势内先尝试进入全屏，再跳转（浏览器可能仍会在跨站点后退出，全凭浏览器策略）
-      if (!document.fullscreenElement && requestFullscreen) {
-        try {
-          var result = requestFullscreen.call(docEl);
-          if (result && typeof result.then === 'function') {
-            result.finally(function () {
-              window.location.href = targetUrl;
-            });
-            return;
-          }
-        } catch (err) {
-          // ignore and fallback to navigation
+  bindTimelineTap(modelNode, function () {
+    if (typeof window.sanxingduiOpenModelViewer === 'function') {
+      window.sanxingduiOpenModelViewer();
+    } else {
+      window.location.href = 'model-viewer.html';
+    }
+  });
+
+  bindTimelineTap(seventeenth, function () {
+    if (typeof window.sanxingduiOpenNpcOverlay === 'function') {
+      window.sanxingduiOpenNpcOverlay();
+    } else {
+      window.location.href = 'NPC.html?embedded=1';
+    }
+  });
+
+  bindTimelineTap(eighteenth, function () {
+    if (typeof window.sanxingduiOpenPanorama === 'function') {
+      window.sanxingduiOpenPanorama();
+    }
+  });
+
+  bindTimelineTap(externalNode, function () {
+    var targetUrl = 'https://www.shenzhenmuseum.com/v/ljsxd/';
+    var docEl = document.documentElement;
+    var requestFullscreen =
+      docEl.requestFullscreen ||
+      docEl.webkitRequestFullscreen ||
+      docEl.mozRequestFullScreen ||
+      docEl.msRequestFullscreen;
+
+    // 用户手势内先尝试进入全屏，再跳转（浏览器可能仍会在跨站点后退出，全凭浏览器策略）
+    if (!document.fullscreenElement && requestFullscreen) {
+      try {
+        var result = requestFullscreen.call(docEl);
+        if (result && typeof result.then === 'function') {
+          result.finally(function () {
+            window.location.href = targetUrl;
+          });
+          return;
         }
+      } catch (err) {
+        // ignore and fallback to navigation
       }
-      window.location.href = targetUrl;
-    });
-  }
+    }
+    window.location.href = targetUrl;
+  });
 })();
 </script>
 <script>
@@ -1840,11 +1940,13 @@
   function showHint() {
     if (!hint) return;
     hint.classList.remove('hidden');
+    hint.classList.add('flex');
   }
 
   function hideHint() {
     if (!hint) return;
     hint.classList.add('hidden');
+    hint.classList.remove('flex');
   }
 
   window.addEventListener('load', function () {
@@ -1862,6 +1964,12 @@
       });
     });
   }
+
+  window.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && hint && !hint.classList.contains('hidden')) {
+      hideHint();
+    }
+  });
 })();
 </script>
 <script>
